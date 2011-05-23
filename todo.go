@@ -24,27 +24,27 @@ import (
 type Priority int
 
 const (
-	VeryHigh = Priority(4)
-	High = Priority(3)
-	Medium = Priority(2)
-	Low = Priority(1)
-	VeryLow = Priority(0)
+	VERYHIGH = Priority(4)
+	HIGH = Priority(3)
+	MEDIUM = Priority(2)
+	LOW = Priority(1)
+	VERYLOW = Priority(0)
 )
 
 var priorityMapFromString map[string]Priority = map[string]Priority {
-	"veryhigh": VeryHigh,
-	"high": High,
-	"medium": Medium,
-	"low": Low,
-	"verylow": VeryLow,
+	"veryhigh": VERYHIGH,
+	"high": HIGH,
+	"medium": MEDIUM,
+	"low": LOW,
+	"verylow": VERYLOW,
 }
 
 var priorityToString map[Priority]string = map[Priority]string {
-	VeryHigh: "veryhigh",
-	High: "high",
-	Medium: "medium",
-	VeryLow: "verylow",
-	Low: "low",
+	VERYHIGH: "veryhigh",
+	HIGH: "high",
+	MEDIUM: "medium",
+	VERYLOW: "verylow",
+	LOW: "low",
 }
 
 func (p Priority) String() string {
@@ -52,7 +52,10 @@ func (p Priority) String() string {
 }
 
 func PriorityFromString(priority string) Priority {
-	return priorityMapFromString[priority]
+	if p, ok := priorityMapFromString[priority]; ok {
+		return p
+	}
+	return MEDIUM
 }
 
 type TaskIterator interface {
@@ -61,12 +64,9 @@ type TaskIterator interface {
 }
 
 type Task interface {
-	// Return an iterator over child tasks, nil if no children.
+	// Return an iterator over child tasks. nil if no children.
 	Begin() TaskIterator
 	AddTask(text string, priority Priority) Task
-
-	Parent() Task
-	Depth() int
 
 	Text() string
 	SetText(text string)
@@ -105,33 +105,20 @@ type taskImpl struct {
 	priority Priority
 	created, completed *time.Time
 	tasks *list.List
-	parent *taskImpl
 }
 
-func newTask(parent *taskImpl, text string, priority Priority) Task {
+func newTask(text string, priority Priority) Task {
 	return &taskImpl{
 		text: text,
 		priority: priority,
 		created: time.UTC(),
 		completed: nil,
-		parent: parent,
 		tasks: list.New(),
 	}
 }
 
-func (t *taskImpl) Parent() Task {
-	return t.parent
-}
-
-func (t *taskImpl) Depth() int {
-	if parent := t.Parent(); parent != nil {
-		return 1 + parent.Depth()
-	}
-	return 0
-}
-
 func (t *taskImpl) AddTask(text string, priotity Priority) Task {
-	task := newTask(t, text, priotity)
+	task := newTask(text, priotity)
 	t.tasks.PushBack(task)
 	return task
 }
@@ -177,5 +164,5 @@ func (t *taskImpl) SetPriority(priority Priority) {
 }
 
 func NewTaskList() TaskList {
-	return newTask(nil, "", Medium).(TaskList)
+	return newTask("", MEDIUM).(TaskList)
 }

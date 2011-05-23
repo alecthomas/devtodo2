@@ -18,48 +18,114 @@ package main
 
 import (
 	"fmt"
+	"strings"
+	"syscall"
+	"unsafe"
 )
 
-const ( 
-	Reset = "\x1b[0m" 
-	Bright = "\x1b[1m" 
-	Dim = "\x1b[2m" 
-	Underscore = "\x1b[4m" 
-	Blink = "\x1b[5m" 
-	Reverse = "\x1b[7m" 
-	Hidden = "\x1b[8m" 
-	FgBlack = "\x1b[30m" 
-	FgRed = "\x1b[31m" 
-	FgGreen = "\x1b[32m" 
-	FgYellow = "\x1b[33m" 
-	FgBlue = "\x1b[34m" 
-	FgMagenta = "\x1b[35m" 
-	FgCyan = "\x1b[36m" 
-	FgWhite = "\x1b[37m" 
-	BgBlack = "\x1b[40m" 
-	BgRed = "\x1b[41m" 
-	BgGreen = "\x1b[42m" 
-	BgYellow = "\x1b[43m" 
-	BgBlue = "\x1b[44m" 
-	BgMagenta = "\x1b[45m" 
-	BgCyan = "\x1b[46m" 
-	BgWhite = "\x1b[47m" 
-) 
+const (
+	RESET = "\x1b[0m"
+	BRIGHT = "\x1b[1m"
+	DIM = "\x1b[2m"
+	UNDERSCORE = "\x1b[4m"
+	BLINK = "\x1b[5m"
+	REVERSE = "\x1b[7m"
+	HIDDEN = "\x1b[8m"
+	FGBLACK = "\x1b[30m"
+	FGRED = "\x1b[31m"
+	FGGREEN = "\x1b[32m"
+	FGYELLOW = "\x1b[33m"
+	FGBLUE = "\x1b[34m"
+	FGMAGENTA = "\x1b[35m"
+	FGCYAN = "\x1b[36m"
+	FGWHITE = "\x1b[37m"
+	BGBLACK = "\x1b[40m"
+	BGRED = "\x1b[41m"
+	BGGREEN = "\x1b[42m"
+	BGYELLOW = "\x1b[43m"
+	BGBLUE = "\x1b[44m"
+	BGMAGENTA = "\x1b[45m"
+	BGCYAN = "\x1b[46m"
+	BGWHITE = "\x1b[47m"
+)
 
+const TITLE_COLOUR = BRIGHT + FGGREEN
+const NUMBER_COLOR = FGGREEN
 
-// Print a string with embedded formatting codes
-func consolePrint(text string) {
+// Map for priority level to ANSI colour
+var colourPriorityMap map[Priority]string = map[Priority]string {
+	VERYHIGH: BRIGHT + FGRED,
+	HIGH: BRIGHT + FGYELLOW,
+	MEDIUM: FGWHITE,
+	LOW: FGCYAN,
+	VERYLOW: FGBLUE,
 }
 
-func consoleViewTasks(parent Task, depth int) {
-	for i := parent.Begin(); i != nil; i.Next() {
-		task := i.Task()
-		fmt.Println(task)
-		consoleViewTasks(task, depth + 1)
+func getTerminalWidth() int {
+	type winsize struct {
+		ws_row, ws_col uint16
+		ws_xpixel, ws_ypixel uint16
+	}
+
+	ws := winsize{}
+	syscall.Syscall(syscall.SYS_IOCTL,
+		uintptr(0), uintptr(TIOCGWINSZ),
+		uintptr(unsafe.Pointer(&ws)))
+	return int(ws.ws_col)
+}
+
+
+func taskState(task Task) string {
+	if task.Begin() != nil {
+		return "+"
+	}
+	return " "
+}
+
+func printWrappedText(text string, width, subsequentIndent int) {
+	tokens := strings.Split(text, " ", -1)
+	offset := 0
+	for i, token := range tokens {
+		if i > 0 && offset + len(token) > width {
+			fmt.Printf("\n%s", strings.Repeat(" ", subsequentIndent))
+			offset = 0
+		}
+		fmt.Printf("%s", token)
+		offset += len(token)
+		if offset < width && i != len(tokens) - 1 {
+			fmt.Print(" ")
+			offset += 1
+		}
+	}
+}
+
+func formatTask(width, depth, index int, task Task) {
+	indent := depth * 4 + 4
+	width -= indent
+	state := taskState(task)
+	fmt.Printf("%s%s%s%2d.%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state,
+			   index, RESET, colourPriorityMap[task.Priority()])
+	printWrappedText(task.Text(), width, indent)
+	fmt.Printf("%s\n", RESET)
+}
+
+func consoleDisplayTask(width, depth, index int, task Task) {
+	if depth >= 0 && task.CompletionTime() != nil {
+		return
+	}
+	if depth >= 0 {
+		formatTask(width, depth, index, task)
+	}
+	for index, i := 1, task.Begin(); i != nil; i = i.Next() {
+		consoleDisplayTask(width, depth + 1, index, i.Task())
+		index += 1
 	}
 }
 
 func ConsoleView(tasks TaskList) {
-	fmt.Println(tasks.Text())
-	consoleViewTasks(tasks, 0)
+	width := getTerminalWidth()
+	fmt.Print(TITLE_COLOUR)
+	printWrappedText("    " + tasks.Text(), width, 4)
+	fmt.Printf("%s\n", RESET)
+	consoleDisplayTask(width, -1, 1, tasks)
 }

@@ -17,19 +17,57 @@
 package main
 
 import (
-	"fmt"
 	"os"
+	optarg "github.com/jteeuwen/go-pkg-optarg"
 	"log"
 )
 
+type Action int
+
+const (
+	ACTION_VIEW = Action(0)
+	ACTION_MARK_DONE = Action(1)
+	ACTION_MARK_NOT_DONE = Action(2)
+)
+
+func parseCommandLine() Action {
+	optarg.Header("Actions")
+	optarg.Add("d", "done", "mark the given tasks as done", false)
+	optarg.Add("D", "not-done", "mark the given tasks as not done", false)
+
+	optarg.Header("Options")
+	optarg.Add("p", "priority", "priority of newly created tasks", "medium")
+
+	action := ACTION_VIEW
+
+	for opt := range optarg.Parse() {
+		switch opt.ShortName {
+		// Actions
+		case "d":
+			action = ACTION_MARK_DONE
+		case "D":
+			action = ACTION_MARK_NOT_DONE
+
+		// Options
+		case "p":
+		}
+	}	
+	return action
+}
+
 func main() {
+	action := parseCommandLine()
+
 	todoFile, err := os.Open(".todo")
 	if err != nil {
 		log.Fatal(err)
 	}
-	todo := LoadLegacyTaskList(todoFile)
-	for i := todo.Begin(); i != nil; i = i.Next() {
-		task := i.Task()
-		fmt.Println(task.Priority().String() + ": " + task.Text())
+	taskList := LoadLegacyTaskList(todoFile)
+
+	switch action {
+	case ACTION_VIEW:
+		ConsoleView(taskList)
+	case ACTION_MARK_DONE:
+	case ACTION_MARK_NOT_DONE:
 	}
 }

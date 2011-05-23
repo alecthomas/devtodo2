@@ -46,12 +46,14 @@ func parseXmlNote(parent Task, from []xmlNote) {
 	for _, note := range from {
 		text := strings.TrimSpace(note.Text)
 		priority := PriorityFromString(note.Priority)
-
 		task := parent.AddTask(text, priority)
 		created, _ := strconv.Atoi64(note.Time)
 		completed, _ := strconv.Atoi64(note.Done)
 		task.SetCreationTime(time.SecondsToUTC(created))
-		task.SetCompletionTime(time.SecondsToUTC(completed))
+		if completed != 0 {
+			task.SetCompletionTime(time.SecondsToUTC(completed))
+		}
+		parseXmlNote(task, note.Note)
 	}
 }
 
@@ -59,7 +61,7 @@ func LoadLegacyTaskList(reader io.Reader) TaskList {
 	var todoXml xmlTodo
 	xml.Unmarshal(reader, &todoXml)
 
-	var tasks Task = NewTaskList()
+	tasks := NewTaskList()
 	tasks.SetText(strings.TrimSpace(todoXml.Title))
 	parseXmlNote(tasks, todoXml.Note)
 	return tasks
