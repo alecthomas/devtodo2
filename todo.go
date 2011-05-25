@@ -19,16 +19,18 @@ package main
 import (
 	"time"
 	"container/list"
+	"strings"
+	"strconv"
 )
 
 type Priority int
 
 const (
-	VERYHIGH = Priority(4)
-	HIGH = Priority(3)
-	MEDIUM = Priority(2)
-	LOW = Priority(1)
-	VERYLOW = Priority(0)
+	VERYLOW = Priority(iota)
+	LOW
+	MEDIUM
+	HIGH
+	VERYHIGH
 )
 
 var priorityMapFromString map[string]Priority = map[string]Priority {
@@ -64,6 +66,9 @@ type TaskIterator interface {
 }
 
 type Task interface {
+	// Find a descendant by index.
+	Find(index []int) Task
+
 	// Return an iterator over child tasks. nil if no children.
 	Begin() TaskIterator
 	AddTask(text string, priority Priority) Task
@@ -83,7 +88,25 @@ type Task interface {
 
 type TaskList Task
 
+// Index referencing a task
+type Index []int
+
 // Implementation
+
+// Convert "1.2.3" to int[]{0, 1, 2}
+func IndexFromString(index string) Index {
+	tokens := strings.Split(index, ".", -1)
+	numericIndex := make(Index, len(tokens))
+	for i, token := range tokens {
+		value, err := strconv.Atoi(token)
+		if err != nil || value < 1 {
+			return nil
+		}
+		numericIndex[i] = value - 1
+	}
+	return numericIndex
+}
+
 type taskIteratorImpl struct {
 	cursor *list.Element
 }
@@ -115,6 +138,18 @@ func newTask(text string, priority Priority) Task {
 		completed: nil,
 		tasks: list.New(),
 	}
+}
+
+func (t *taskImpl) Find(index []int) Task {
+	if len(index) == 0 {
+		return t
+	}
+	for n, it := 0, t.Begin(); it != nil; n, it = n + 1, it.Next() {
+		if n == index[0] {
+			return it.Task().Find(index[1:])
+		}
+	}
+	return nil
 }
 
 func (t *taskImpl) AddTask(text string, priotity Priority) Task {

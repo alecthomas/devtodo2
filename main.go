@@ -25,21 +25,27 @@ import (
 type Action int
 
 const (
-	ACTION_VIEW = Action(0)
-	ACTION_MARK_DONE = Action(1)
-	ACTION_MARK_NOT_DONE = Action(2)
+	ACTION_VIEW = Action(iota)
+	ACTION_MARK_DONE
+	ACTION_MARK_NOT_DONE
+	ACTION_ADD_TASK
 )
 
-func parseCommandLine() Action {
+func processAction(tasks TaskList) {
 	optarg.Header("Actions")
+	optarg.Add("a", "add", "add a task", false)
 	optarg.Add("d", "done", "mark the given tasks as done", false)
 	optarg.Add("D", "not-done", "mark the given tasks as not done", false)
 
-	optarg.Header("Options")
+	optarg.Header("Task creation options")
 	optarg.Add("p", "priority", "priority of newly created tasks", "medium")
+	optarg.Add("g", "graft", "index to graft new task to", "")
 
 	action := ACTION_VIEW
+	priority := MEDIUM
+	graft := []int{}
 
+	// First pass, collect options.
 	for opt := range optarg.Parse() {
 		switch opt.ShortName {
 		// Actions
@@ -47,27 +53,37 @@ func parseCommandLine() Action {
 			action = ACTION_MARK_DONE
 		case "D":
 			action = ACTION_MARK_NOT_DONE
+		case "a":
+			action = ACTION_ADD_TASK
 
 		// Options
 		case "p":
+			priority = PriorityFromString(opt.String())
+		case "g":
+			if graft = IndexFromString(opt.String()); graft == nil {
+				printFatal("invalid graft index '%s'", opt.String())
+			}
 		}
-	}	
-	return action
+	}
+
+	switch action {
+		case ACTION_VIEW:
+			ConsoleView(tasks)
+		case ACTION_MARK_DONE:
+		case ACTION_MARK_NOT_DONE:
+		case ACTION_ADD_TASK:
+	}
+
+	println(priority)
+	println(graft)
+	println(optarg.Remainder)
 }
 
 func main() {
-	action := parseCommandLine()
-
 	todoFile, err := os.Open(".todo")
 	if err != nil {
 		log.Fatal(err)
 	}
-	taskList := LoadLegacyTaskList(todoFile)
-
-	switch action {
-	case ACTION_VIEW:
-		ConsoleView(taskList)
-	case ACTION_MARK_DONE:
-	case ACTION_MARK_NOT_DONE:
-	}
+	tasks := LoadLegacyTaskList(todoFile)
+	processAction(tasks)
 }

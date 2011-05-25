@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -75,11 +76,16 @@ func getTerminalWidth() int {
 }
 
 
-func taskState(task Task) string {
+func taskState(task Task) int {
 	if task.Begin() != nil {
-		return "+"
+		return '+'
 	}
-	return " "
+	return ' '
+}
+
+func printFatal(format string, args ...interface{}) {
+	fmt.Printf("error: %s\n", fmt.Sprintf(format, args...))
+	os.Exit(1)
 }
 
 func printWrappedText(text string, width, subsequentIndent int) {
@@ -103,7 +109,7 @@ func formatTask(width, depth, index int, task Task) {
 	indent := depth * 4 + 4
 	width -= indent
 	state := taskState(task)
-	fmt.Printf("%s%s%s%2d.%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state,
+	fmt.Printf("%s%s%c%2d.%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state,
 			   index, RESET, colourPriorityMap[task.Priority()])
 	printWrappedText(task.Text(), width, indent)
 	fmt.Printf("%s\n", RESET)
