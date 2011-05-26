@@ -27,14 +27,14 @@ func TestFind(t *testing.T) {
 	b.AddTask("do C", MEDIUM)
 	b.AddTask("do D", MEDIUM)
 	
-	task := tasks.Find([]int{1, 1})
+	task := tasks.Find("2.2")
 	if task == nil || task.Text() != "do D" {
 		t.Fail()
 	}
 }
 
 func TestIndexFromString(t *testing.T) {
-	index := IndexFromString("1.2.3")
+	index := indexFromString("1.2.3")
 	if len(index) != 3 || index[0] != 0 || index[1] != 1 || index[2] != 2 {
 		t.Fail()
 	}

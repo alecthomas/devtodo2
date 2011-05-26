@@ -31,6 +31,10 @@ const (
 	ACTION_ADD_TASK
 )
 
+func doView(tasks TaskList) {
+	ConsoleView(tasks)
+}
+
 func processAction(tasks TaskList) {
 	optarg.Header("Actions")
 	optarg.Add("a", "add", "add a task", false)
@@ -43,7 +47,7 @@ func processAction(tasks TaskList) {
 
 	action := ACTION_VIEW
 	priority := MEDIUM
-	graft := []int{}
+	var graft Task = nil
 
 	// First pass, collect options.
 	for opt := range optarg.Parse() {
@@ -60,7 +64,7 @@ func processAction(tasks TaskList) {
 		case "p":
 			priority = PriorityFromString(opt.String())
 		case "g":
-			if graft = IndexFromString(opt.String()); graft == nil {
+			if graft = tasks.Find(opt.String()); graft == nil {
 				printFatal("invalid graft index '%s'", opt.String())
 			}
 		}
@@ -68,7 +72,7 @@ func processAction(tasks TaskList) {
 
 	switch action {
 		case ACTION_VIEW:
-			ConsoleView(tasks)
+			doView(tasks)
 		case ACTION_MARK_DONE:
 		case ACTION_MARK_NOT_DONE:
 		case ACTION_ADD_TASK:

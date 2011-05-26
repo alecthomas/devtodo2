@@ -39,14 +39,16 @@ type xmlTodo struct {
 	Note []xmlNote
 }
 
-func parseXmlNote(parent Task, from []xmlNote) {
+func parseXmlNote(parent TaskNode, from []xmlNote) {
 	if from == nil {
 		return
 	}
 	for _, note := range from {
 		text := strings.TrimSpace(note.Text)
 		priority := PriorityFromString(note.Priority)
+
 		task := parent.AddTask(text, priority)
+
 		created, _ := strconv.Atoi64(note.Time)
 		completed, _ := strconv.Atoi64(note.Done)
 		task.SetCreationTime(time.SecondsToUTC(created))
@@ -62,7 +64,7 @@ func LoadLegacyTaskList(reader io.Reader) TaskList {
 	xml.Unmarshal(reader, &todoXml)
 
 	tasks := NewTaskList()
-	tasks.SetText(strings.TrimSpace(todoXml.Title))
+	tasks.SetTitle(strings.TrimSpace(todoXml.Title))
 	parseXmlNote(tasks, todoXml.Note)
 	return tasks
 }
