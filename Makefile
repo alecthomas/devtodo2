@@ -1,7 +1,7 @@
 include $(GOROOT)/src/Make.inc
 
 TARG=todo2
-GOFILES=tiocgwinsz.go todo.go filter.go consoleview.go legacyloader.go main.go
+GOFILES=tiocgwinsz.go todo.go consoleview.go legacyloader.go main.go
 
 include $(GOROOT)/src/Make.cmd
 

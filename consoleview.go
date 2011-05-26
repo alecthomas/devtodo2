@@ -77,7 +77,7 @@ func getTerminalWidth() int {
 
 
 func taskState(task Task) int {
-	if task.Begin() != nil {
+	if task.Len() != 0 {
 		return '+'
 	}
 	return ' '
@@ -122,8 +122,8 @@ func consoleDisplayTask(width, depth, index int, task Task) {
 	if depth >= 0 {
 		formatTask(width, depth, index, task)
 	}
-	for index, i := 1, task.Begin(); i != nil; i = i.Next() {
-		consoleDisplayTask(width, depth + 1, index, i.Task())
+	for index, i := 1, 0; i < task.Len(); i++ {
+		consoleDisplayTask(width, depth + 1, index, task.At(i))
 		index += 1
 	}
 }
@@ -133,7 +133,7 @@ func ConsoleView(tasks TaskList) {
 	fmt.Print(TITLE_COLOUR)
 	printWrappedText("    " + tasks.Title(), width, 4)
 	fmt.Printf("%s\n", RESET)
-	for index, task := 1, tasks.Begin(); task != nil; task = task.Next() {
-		consoleDisplayTask(width, 0, index, task.Task())
+	for i := 0; i < tasks.Len(); i++ {
+		consoleDisplayTask(width, 0, i, tasks.At(i))
 	}
 }

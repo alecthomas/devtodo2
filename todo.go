@@ -18,7 +18,7 @@ package main
 
 import (
 	"time"
-	"container/list"
+	"container/vector"
 	"strings"
 	"strconv"
 )
@@ -66,12 +66,12 @@ type TaskIterator interface {
 }
 
 type TaskNode interface {
-
 	// Return an iterator over child tasks. nil if no children.
-	Begin() TaskIterator
 	At(index int) Task
+	Len() int
 
-	AddTask(text string, priority Priority) Task
+	AddTask(task Task)
+	InsertTask(before int, task Task)
 }
 
 type Task interface {
@@ -104,51 +104,28 @@ type Index []int
 
 // Implementation
 
-type taskIteratorImpl struct {
-	cursor *list.Element
-}
-
-func (i *taskIteratorImpl) Next() TaskIterator {
-	i.cursor = i.cursor.Next()
-	if i.cursor == nil {
-		return nil
-	}
-	return i
-}
-
-func (i *taskIteratorImpl) Task() Task {
-	return i.cursor.Value.(*taskImpl)
-}
-
 type taskNodeImpl struct {
-	tasks *list.List
+	tasks vector.Vector
 }
 
 func newTaskNode() *taskNodeImpl {
-	return &taskNodeImpl{tasks: list.New()}
+	return &taskNodeImpl{}
+}
+
+func (self *taskNodeImpl) Len() int {
+	return self.tasks.Len()
 }
 
 func (self *taskNodeImpl) At(index int) Task {
-	for n, it := 0, self.Begin(); it != nil; n, it = n + 1, it.Next() {
-		if n == index {
-			return it.Task()
-		}
-	}
-	return nil
+	return self.tasks.At(index).(Task)
 }
 
-func (self *taskNodeImpl) AddTask(text string, priotity Priority) Task {
-	task := newTask(text, priotity)
-	self.tasks.PushBack(task)
-	return task
+func (self *taskNodeImpl) AddTask(task Task) {
+	self.tasks.Push(task)
 }
 
-func (self *taskNodeImpl) Begin() TaskIterator {
-	front := self.tasks.Front()
-	if front == nil {
-		return nil
-	}
-	return &taskIteratorImpl{cursor: front}
+func (self *taskNodeImpl) InsertTask(before int, task Task) {
+	self.tasks.Insert(before, task)
 }
 
 type taskImpl struct {
@@ -158,7 +135,7 @@ type taskImpl struct {
 	created, completed *time.Time
 }
 
-func newTask(text string, priority Priority) Task {
+func NewTask(text string, priority Priority) Task {
 	return &taskImpl{
 		taskNodeImpl: newTaskNode(),
 		text: text,
@@ -212,7 +189,7 @@ func NewTaskList() TaskList {
 	}
 }
 
-// Convert "1.2.3" to int[]{0, 1, 2}
+// Convert "1.2.3" to int[]{0, 1, 2} ready for indexing into TaskNodes
 func indexFromString(index string) Index {
 	tokens := strings.Split(index, ".", -1)
 	numericIndex := make(Index, len(tokens))

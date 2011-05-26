@@ -47,7 +47,8 @@ func parseXmlNote(parent TaskNode, from []xmlNote) {
 		text := strings.TrimSpace(note.Text)
 		priority := PriorityFromString(note.Priority)
 
-		task := parent.AddTask(text, priority)
+		task := NewTask(text, priority)
+		parent.AddTask(task)
 
 		created, _ := strconv.Atoi64(note.Time)
 		completed, _ := strconv.Atoi64(note.Done)
