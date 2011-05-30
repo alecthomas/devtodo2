@@ -103,12 +103,11 @@ func fromMarshalableTaskList(l *marshalableTaskList) TaskList {
 
 func fromMarshalableTask(node TaskNode, t []*marshalableTask) {
 	for _, j := range t {
-		task := NewTask(j.Text, PriorityFromString(j.Priority))
+		task := node.Create(j.Text, PriorityFromString(j.Priority))
 		task.SetCreationTime(time.SecondsToUTC(j.Creation))
 		if j.Completion != 0 {
 			task.SetCompletionTime(time.SecondsToUTC(j.Completion))
 		}
-		node.AddTask(task)
 		fromMarshalableTask(task, j.Tasks)
 	}
 }

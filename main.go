@@ -20,6 +20,7 @@ import (
 	"fmt"
 	goopt "github.com/droundy/goopt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -30,39 +31,45 @@ var markNotDoneFlag = goopt.Flag([]string{"-D", "--not-done"}, nil, "mark the gi
 var removeFlag = goopt.Flag([]string{"--remove"}, nil, "remove the given tasks", "")
 var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task A below task B", "")
 // Options
-var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks")
+var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
 var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
 var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
+var allFlag = goopt.Flag([]string{"-A", "--all"}, nil, "show all tasks, even completed ones", "")
 
 func doView(tasks TaskList) {
-	ConsoleView(tasks)
+	ConsoleView(tasks, *allFlag)
 }
 
 func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
-	printFatal("add is not implemented")
+	graft.Create(text, priority)
+	saveTaskList(tasks)
 }
 
 func doMarkDone(tasks TaskList, references []Task) {
-	printFatal("add is not implemented")
 	for _, task := range references {
-		println(task.Text())
+		task.SetCompleted()
 	}
+	saveTaskList(tasks)
 }
 
 func doMarkNotDone(tasks TaskList, references []Task) {
-	printFatal("add is not implemented")
 	for _, task := range references {
-		println(task.Text())
+		task.SetCompletionTime(nil)
 	}
+	saveTaskList(tasks)
 }
 
-func doReparent(tasks TaskList, from Task, to Task) {
-	printFatal("reparenting is not implemented")
+func doReparent(tasks TaskList, task Task, below Task) {
+	task.Reparent(below)
+	saveTaskList(tasks)
 }
 
 func doRemove(tasks TaskList, references []Task) {
-	printFatal("removing tasks is not implemented")
+	for _, task := range references {
+		task.Delete()
+	}
+	saveTaskList(tasks)
 }
 
 func processAction(tasks TaskList) {
@@ -134,11 +141,50 @@ func loadTaskList() (TaskList, os.Error) {
 	return nil, nil
 }
 
+func saveTaskList(tasks TaskList) (err os.Error) {
+	path := *fileFlag
+	if path, err = filepath.Abs(path); err != nil {
+		return err
+	}
+	dir, file := filepath.Split(path)
+	println(dir, file)
+	// TODO Use a temporary file
+	if file, err := os.Create(*fileFlag); err == nil {
+		defer file.Close()
+		writer := NewJsonIO()
+		return writer.Serialize(file, tasks)
+	}
+	return nil
+}
+
 func main() {
+	goopt.Suite = "DevTodo2"
 	goopt.Version = "2.0"
-	goopt.Summary = "DevTodo version 2"
+	goopt.Author = "Alec Thomas <alec@swapoff.org>"
+	goopt.Description = func() string {
+		return `DevTodo is a program aimed specifically at programmers (but usable by anybody
+at the terminal) to aid in day-to-day development.
+
+It maintains a list of items that have yet to be completed, one for each
+project directory. This allows the programmer to track outstanding bugs or
+items that need to be completed with very little effort.
+
+Items can be prioritised and are displayed in a hierarchy, so that one item may
+depend on another.
+
+
+todo2 [-A]
+  Display (all) tasks.
+
+todo2 [-p <priority>] -a <text>
+  Create a new task.
+
+todo2 -d <index>
+  Mark a task as complete.`
+	}
+	goopt.Summary = "DevTodo2 - a hierarchical command-line task manager"
 	goopt.Usage = func () string {
-		return fmt.Sprintf("usage: %s [<options>] [<filter>|<text>]\n\n  %s\n\n%s",
+		return fmt.Sprintf("usage: %s [<options>] ...\n\n%s\n\n%s",
 						   os.Args[0], goopt.Summary, goopt.Help())
 	}
 	goopt.Parse(nil)

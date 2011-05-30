@@ -22,10 +22,10 @@ import (
 
 func TestFind(t *testing.T) {
 	tasks := NewTaskList()
-	tasks.AddTask(NewTask("do A", MEDIUM))
-	b := tasks.AddTask(NewTask("do B", MEDIUM))
-	b.AddTask(NewTask("do C", MEDIUM))
-	b.AddTask(NewTask("do D", MEDIUM))
+	tasks.Create("do A", MEDIUM)
+	b := tasks.Create("do B", MEDIUM)
+	b.Create("do C", MEDIUM)
+	b.Create("do D", MEDIUM)
 	
 	task := tasks.Find("2.2")
 	if task == nil || task.Text() != "do D" {
@@ -36,6 +36,29 @@ func TestFind(t *testing.T) {
 func TestIndexFromString(t *testing.T) {
 	index := indexFromString("1.2.3")
 	if len(index) != 3 || index[0] != 0 || index[1] != 1 || index[2] != 2 {
+		t.Fail()
+	}
+}
+
+func TestDelete(t *testing.T) {
+	tasks := NewTaskList()
+	a := tasks.Create("do A", MEDIUM)
+	b := tasks.Create("do B", MEDIUM)
+	c := tasks.Create("do C", MEDIUM)
+	b.Delete()
+	if tasks.Len() != 2 || tasks.At(0).Equal(a) || tasks.At(1).Equal(c) {
+		t.Fail()
+	}
+}
+
+func TestReparent(t *testing.T) {
+	tasks := NewTaskList()
+	a := tasks.Create("do A", MEDIUM)
+	a.Create("do AA", MEDIUM)
+	bb := a.Create("do BB", MEDIUM)
+	b := tasks.Create("do B", MEDIUM)
+	bb.Reparent(b)
+	if bb.Parent().Equal(b) {
 		t.Fail()
 	}
 }

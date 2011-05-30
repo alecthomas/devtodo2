@@ -44,13 +44,15 @@ type TaskNode interface {
 	// Return an iterator over child tasks. nil if no children.
 	At(index int) Task
 	Len() int
+	Equal(other TaskNode) bool
 
 	Parent() TaskNode
 	SetParent(parent TaskNode)
 
-	AddTask(task Task) Task
-	InsertTask(before int, task Task)
-	DeleteTask(index int)
+	Append(child TaskNode)
+	Create(title string, priority Priority) Task
+	Reparent(below TaskNode)
+	Delete()
 }
 
 type Task interface {
@@ -65,6 +67,7 @@ type Task interface {
 	SetCreationTime(time *time.Time)
 	CreationTime() *time.Time
 
+	SetCompleted()
 	SetCompletionTime(time *time.Time)
 	CompletionTime() *time.Time
 }
@@ -121,6 +124,10 @@ func newTaskNode() *taskNodeImpl {
 	}
 }
 
+func (self *taskNodeImpl) Equal(other TaskNode) bool {
+	return self == other
+}
+
 func (self *taskNodeImpl) Len() int {
 	return self.tasks.Len()
 }
@@ -140,18 +147,35 @@ func (self *taskNodeImpl) SetParent(parent TaskNode) {
 	self.parent = parent
 }
 
-func (self *taskNodeImpl) AddTask(task Task) Task {
-	self.tasks.Push(task)
-	task.SetParent(self)
+func (self *taskNodeImpl) Append(child TaskNode) {
+	child.SetParent(self)
+	self.tasks.Push(child)
+}
+
+func (self *taskNodeImpl) Create(title string, priority Priority) Task {
+	task := newTask(title, priority)
+	self.Append(task)
 	return task
 }
 
-func (self *taskNodeImpl) InsertTask(before int, task Task) {
-	self.tasks.Insert(before, task)
+func (self *taskNodeImpl) Reparent(below TaskNode) {
+	self.Delete()
+	below.Append(self)
 }
 
-func (self *taskNodeImpl) DeleteTask(index int) {
-	self.tasks.Delete(index)
+func (self *taskNodeImpl) Delete() {
+	parent := self.Parent().(*taskNodeImpl)
+	if parent == nil {
+		panic("can not delete root node")
+	}
+	for i := 0; i < parent.Len(); i++ {
+		if parent.At(i).Equal(self) {
+			parent.tasks.Delete(i)
+			self.parent = nil
+			return
+		}
+	}
+	panic("couldn't find self in parent in order to delete")
 }
 
 type taskImpl struct {
@@ -161,7 +185,7 @@ type taskImpl struct {
 	created, completed *time.Time
 }
 
-func NewTask(text string, priority Priority) Task {
+func newTask(text string, priority Priority) Task {
 	return &taskImpl{
 		taskNodeImpl: newTaskNode(),
 		text: text,
@@ -177,6 +201,10 @@ func (self *taskImpl) SetCreationTime(time *time.Time) {
 
 func (self *taskImpl) CreationTime() *time.Time {
 	return self.created
+}
+
+func (self *taskImpl) SetCompleted() {
+	self.SetCompletionTime(time.UTC())
 }
 
 func (self *taskImpl) SetCompletionTime(time *time.Time) {
@@ -224,13 +252,16 @@ func indexFromString(index string) Index {
 		if err != nil || value < 1 {
 			return nil
 		}
-		numericIndex[i] = value
+		numericIndex[i] = value - 1
 	}
 	return numericIndex
 }
 
 func (self *taskListImpl) Find(index string) Task {
 	numericIndex := indexFromString(index)
+	if numericIndex == nil {
+		return nil
+	}
 	var node TaskNode = self
 	for _, i := range numericIndex {
 		if node = node.At(i); node == nil {

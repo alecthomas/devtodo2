@@ -80,6 +80,9 @@ func taskState(task Task) int {
 	if task.Len() != 0 {
 		return '+'
 	}
+	if task.CompletionTime() != nil {
+		return '-'
+	}
 	return ' '
 }
 
@@ -110,30 +113,29 @@ func formatTask(width, depth, index int, task Task) {
 	width -= indent
 	state := taskState(task)
 	fmt.Printf("%s%s%c%2d.%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state,
-			   index, RESET, colourPriorityMap[task.Priority()])
+			   index + 1, RESET, colourPriorityMap[task.Priority()])
 	printWrappedText(task.Text(), width, indent)
 	fmt.Printf("%s\n", RESET)
 }
 
-func consoleDisplayTask(width, depth, index int, task Task) {
-	if depth >= 0 && task.CompletionTime() != nil {
+func consoleDisplayTask(width, depth, index int, task Task, showAll bool) {
+	if depth >= 0 && (!showAll && task.CompletionTime() != nil) {
 		return
 	}
 	if depth >= 0 {
 		formatTask(width, depth, index, task)
 	}
-	for index, i := 1, 0; i < task.Len(); i++ {
-		consoleDisplayTask(width, depth + 1, index, task.At(i))
-		index += 1
+	for i := 0; i < task.Len(); i++ {
+		consoleDisplayTask(width, depth + 1, i, task.At(i), showAll)
 	}
 }
 
-func ConsoleView(tasks TaskList) {
+func ConsoleView(tasks TaskList, showAll bool) {
 	width := getTerminalWidth()
 	fmt.Print(TITLE_COLOUR)
 	printWrappedText("    " + tasks.Title(), width, 4)
 	fmt.Printf("%s\n", RESET)
 	for i := 0; i < tasks.Len(); i++ {
-		consoleDisplayTask(width, 0, i, tasks.At(i))
+		consoleDisplayTask(width, 0, i, tasks.At(i), showAll)
 	}
 }
