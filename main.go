@@ -17,77 +17,135 @@
 package main
 
 import (
+	"fmt"
+	goopt "github.com/droundy/goopt"
 	"os"
-	optarg "github.com/jteeuwen/go-pkg-optarg"
-	"log"
+	"strings"
 )
 
-type Action int
-
-const (
-	ACTION_VIEW = Action(iota)
-	ACTION_MARK_DONE
-	ACTION_MARK_NOT_DONE
-	ACTION_ADD_TASK
-)
+// Actions
+var addFlag = goopt.Flag([]string{"-a", "--add"}, nil, "add a task", "")
+var markDoneFlag = goopt.Flag([]string{"-d", "--done"}, nil, "mark the given tasks as done", "")
+var markNotDoneFlag = goopt.Flag([]string{"-D", "--not-done"}, nil, "mark the given tasks as not done", "")
+var removeFlag = goopt.Flag([]string{"--remove"}, nil, "remove the given tasks", "")
+var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task A below task B", "")
+// Options
+var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks")
+var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
+var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
+var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
 
 func doView(tasks TaskList) {
 	ConsoleView(tasks)
 }
 
+func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
+	printFatal("add is not implemented")
+}
+
+func doMarkDone(tasks TaskList, references []Task) {
+	printFatal("add is not implemented")
+	for _, task := range references {
+		println(task.Text())
+	}
+}
+
+func doMarkNotDone(tasks TaskList, references []Task) {
+	printFatal("add is not implemented")
+	for _, task := range references {
+		println(task.Text())
+	}
+}
+
+func doReparent(tasks TaskList, from Task, to Task) {
+	printFatal("reparenting is not implemented")
+}
+
+func doRemove(tasks TaskList, references []Task) {
+	printFatal("removing tasks is not implemented")
+}
+
 func processAction(tasks TaskList) {
-	optarg.Header("Actions")
-	optarg.Add("a", "add", "add a task", false)
-	optarg.Add("d", "done", "mark the given tasks as done", false)
-	optarg.Add("D", "not-done", "mark the given tasks as not done", false)
-
-	optarg.Header("Task creation options")
-	optarg.Add("p", "priority", "priority of newly created tasks", "medium")
-	optarg.Add("g", "graft", "index to graft new task to", "")
-
-	action := ACTION_VIEW
-	priority := MEDIUM
-	var graft Task = nil
-
-	// First pass, collect options.
-	for opt := range optarg.Parse() {
-		switch opt.ShortName {
-		// Actions
-		case "d":
-			action = ACTION_MARK_DONE
-		case "D":
-			action = ACTION_MARK_NOT_DONE
-		case "a":
-			action = ACTION_ADD_TASK
-
-		// Options
-		case "p":
-			priority = PriorityFromString(opt.String())
-		case "g":
-			if graft = tasks.Find(opt.String()); graft == nil {
-				printFatal("invalid graft index '%s'", opt.String())
-			}
+	priority := PriorityFromString(*priorityFlag)
+	var graft TaskNode = tasks
+	if *graftFlag != "root" {
+		if graft = tasks.Find(*graftFlag); graft == nil {
+			printFatal("invalid graft index '%s'", *graftFlag)
 		}
 	}
 
-	switch action {
-		case ACTION_VIEW:
-			doView(tasks)
-		case ACTION_MARK_DONE:
-		case ACTION_MARK_NOT_DONE:
-		case ACTION_ADD_TASK:
+	switch {
+	case *addFlag:
+		if len(goopt.Args) == 0 {
+			printFatal("expected text for new task")
+		}
+		text := strings.Join(goopt.Args, " ")
+		doAdd(tasks, graft, priority, text)
+	case *markDoneFlag:
+		doMarkDone(tasks, resolveTaskReferences(tasks, goopt.Args))
+	case *markNotDoneFlag:
+		doMarkNotDone(tasks, resolveTaskReferences(tasks, goopt.Args))
+	case *removeFlag:
+		doRemove(tasks, resolveTaskReferences(tasks, goopt.Args))
+	case *reparentFlag:
+		if len(goopt.Args) != 2 {
+			printFatal("expected <task> <new-parent> for reparenting")
+		}
+		doReparent(tasks, resolveTaskReference(tasks, goopt.Args[0]),
+							 resolveTaskReference(tasks, goopt.Args[1]))
+	default:
+		doView(tasks)
 	}
+}
 
-	println(priority)
-	println(graft)
-	println(optarg.Remainder)
+func resolveTaskReference(tasks TaskList, index string) Task {
+	task := tasks.Find(index)
+	if task == nil {
+		printFatal("invalid task index %s", index)
+	}
+	return task
+}
+
+func resolveTaskReferences(tasks TaskList, indices []string) []Task {
+	references := make([]Task, len(indices))
+	for i, index := range indices {
+		task := resolveTaskReference(tasks, index)
+		references[i] = task
+	}
+	if len(references) == 0 {
+		printFatal("no tasks provided to mark done")
+	}
+	return references
+}
+
+func loadTaskList() (TaskList, os.Error) {
+	// Try loading new-style task file
+	if file, err := os.Open(*fileFlag); err == nil {
+		defer file.Close()
+		loader := NewJsonIO()
+		return loader.Deserialize(file)
+	}
+	// Try loading legacy task file
+	if file, err := os.Open(*legacyFileFlag); err == nil {
+		defer file.Close()
+		loader := NewLegacyIO()
+		return loader.Deserialize(file)
+	}
+	return nil, nil
 }
 
 func main() {
-	todoFile, err := os.Open(".todo")
-	if err != nil {
-		log.Fatal(err)
+	goopt.Version = "2.0"
+	goopt.Summary = "DevTodo version 2"
+	goopt.Usage = func () string {
+		return fmt.Sprintf("usage: %s [<options>] [<filter>|<text>]\n\n  %s\n\n%s",
+						   os.Args[0], goopt.Summary, goopt.Help())
 	}
-	tasks := LoadLegacyTaskList(todoFile)
+	goopt.Parse(nil)
+
+	tasks, err := loadTaskList()
+	if err != nil {
+		printFatal("%s", err)
+	}
 	processAction(tasks)
 }

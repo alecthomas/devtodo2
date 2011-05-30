@@ -22,10 +22,10 @@ import (
 
 func TestFind(t *testing.T) {
 	tasks := NewTaskList()
-	tasks.AddTask("do A", MEDIUM)
-	b := tasks.AddTask("do B", MEDIUM)
-	b.AddTask("do C", MEDIUM)
-	b.AddTask("do D", MEDIUM)
+	tasks.AddTask(NewTask("do A", MEDIUM))
+	b := tasks.AddTask(NewTask("do B", MEDIUM))
+	b.AddTask(NewTask("do C", MEDIUM))
+	b.AddTask(NewTask("do D", MEDIUM))
 	
 	task := tasks.Find("2.2")
 	if task == nil || task.Text() != "do D" {

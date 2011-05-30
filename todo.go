@@ -17,10 +17,12 @@
 package main
 
 import (
-	"time"
 	"container/vector"
-	"strings"
+	"io"
+	"os"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type Priority int
@@ -33,36 +35,9 @@ const (
 	VERYHIGH
 )
 
-var priorityMapFromString map[string]Priority = map[string]Priority {
-	"veryhigh": VERYHIGH,
-	"high": HIGH,
-	"medium": MEDIUM,
-	"low": LOW,
-	"verylow": VERYLOW,
-}
-
-var priorityToString map[Priority]string = map[Priority]string {
-	VERYHIGH: "veryhigh",
-	HIGH: "high",
-	MEDIUM: "medium",
-	VERYLOW: "verylow",
-	LOW: "low",
-}
-
-func (p Priority) String() string {
-	return priorityToString[p]
-}
-
-func PriorityFromString(priority string) Priority {
-	if p, ok := priorityMapFromString[priority]; ok {
-		return p
-	}
-	return MEDIUM
-}
-
-type TaskIterator interface {
-	Next() TaskIterator
-	Task() Task
+type TaskListIO interface {
+	Deserialize(reader io.Reader) (TaskList, os.Error)
+	Serialize(writer io.Writer, tasks TaskList) os.Error
 }
 
 type TaskNode interface {
@@ -70,8 +45,12 @@ type TaskNode interface {
 	At(index int) Task
 	Len() int
 
-	AddTask(task Task)
+	Parent() TaskNode
+	SetParent(parent TaskNode)
+
+	AddTask(task Task) Task
 	InsertTask(before int, task Task)
+	DeleteTask(index int)
 }
 
 type Task interface {
@@ -104,12 +83,42 @@ type Index []int
 
 // Implementation
 
+var priorityMapFromString map[string]Priority = map[string]Priority {
+	"veryhigh": VERYHIGH,
+	"high": HIGH,
+	"medium": MEDIUM,
+	"low": LOW,
+	"verylow": VERYLOW,
+}
+
+var priorityToString map[Priority]string = map[Priority]string {
+	VERYHIGH: "veryhigh",
+	HIGH: "high",
+	MEDIUM: "medium",
+	VERYLOW: "verylow",
+	LOW: "low",
+}
+
+func (p Priority) String() string {
+	return priorityToString[p]
+}
+
+func PriorityFromString(priority string) Priority {
+	if p, ok := priorityMapFromString[priority]; ok {
+		return p
+	}
+	return MEDIUM
+}
+
 type taskNodeImpl struct {
 	tasks vector.Vector
+	parent TaskNode
 }
 
 func newTaskNode() *taskNodeImpl {
-	return &taskNodeImpl{}
+	return &taskNodeImpl{
+		parent: nil,
+	}
 }
 
 func (self *taskNodeImpl) Len() int {
@@ -117,15 +126,32 @@ func (self *taskNodeImpl) Len() int {
 }
 
 func (self *taskNodeImpl) At(index int) Task {
+	if index >= len(self.tasks) {
+		return nil
+	}
 	return self.tasks.At(index).(Task)
 }
 
-func (self *taskNodeImpl) AddTask(task Task) {
+func (self *taskNodeImpl) Parent() TaskNode {
+	return self.parent
+}
+
+func (self *taskNodeImpl) SetParent(parent TaskNode) {
+	self.parent = parent
+}
+
+func (self *taskNodeImpl) AddTask(task Task) Task {
 	self.tasks.Push(task)
+	task.SetParent(self)
+	return task
 }
 
 func (self *taskNodeImpl) InsertTask(before int, task Task) {
 	self.tasks.Insert(before, task)
+}
+
+func (self *taskNodeImpl) DeleteTask(index int) {
+	self.tasks.Delete(index)
 }
 
 type taskImpl struct {
@@ -198,7 +224,7 @@ func indexFromString(index string) Index {
 		if err != nil || value < 1 {
 			return nil
 		}
-		numericIndex[i] = value - 1
+		numericIndex[i] = value
 	}
 	return numericIndex
 }

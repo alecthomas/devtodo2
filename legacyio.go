@@ -20,11 +20,16 @@ package main
 
 import (
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 	"xml"
 )
+
+type legacyIO struct {
+	TaskListIO
+}
 
 type xmlNote struct {
 	Priority string "attr"
@@ -60,12 +65,22 @@ func parseXmlNote(parent TaskNode, from []xmlNote) {
 	}
 }
 
-func LoadLegacyTaskList(reader io.Reader) TaskList {
-	var todoXml xmlTodo
-	xml.Unmarshal(reader, &todoXml)
+func NewLegacyIO() TaskListIO {
+	return &legacyIO{}
+}
 
-	tasks := NewTaskList()
+func (self *legacyIO) Deserialize(reader io.Reader) (tasks TaskList, err os.Error) {
+	todoXml := &xmlTodo{}
+	if err = xml.Unmarshal(reader, &todoXml); err != nil {
+		return
+	}
+
+	tasks = NewTaskList()
 	tasks.SetTitle(strings.TrimSpace(todoXml.Title))
 	parseXmlNote(tasks, todoXml.Note)
-	return tasks
+	return
+}
+
+func (self *legacyIO) Serialize(writer io.Writer, tasks TaskList) os.Error {
+	return os.NewError("serialization to legacy format not supported")
 }
