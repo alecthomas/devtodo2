@@ -132,9 +132,11 @@ func consoleDisplayTask(width, depth, index int, task Task, showAll bool) {
 
 func ConsoleView(tasks TaskList, showAll bool) {
 	width := getTerminalWidth()
-	fmt.Print(TITLE_COLOUR)
-	printWrappedText("    " + tasks.Title(), width, 4)
-	fmt.Printf("%s\n", RESET)
+	if tasks.Title() != "" {
+		fmt.Print(TITLE_COLOUR)
+		printWrappedText("    " + tasks.Title(), width, 4)
+		fmt.Printf("%s\n", RESET)
+	}
 	for i := 0; i < tasks.Len(); i++ {
 		consoleDisplayTask(width, 0, i, tasks.At(i), showAll)
 	}

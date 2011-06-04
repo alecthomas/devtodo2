@@ -13,5 +13,5 @@ tiocgwinsz: tiocgwinsz.c
 tiocgwinsz.go: tiocgwinsz
 	./tiocgwinsz
 
-todo2.1: todo2
+todo2.1: $(GOFILES)
 	./todo2 --create-manpage > $@

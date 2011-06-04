@@ -31,6 +31,8 @@ var markDoneFlag = goopt.Flag([]string{"-d", "--done"}, nil, "mark the given tas
 var markNotDoneFlag = goopt.Flag([]string{"-D", "--not-done"}, nil, "mark the given tasks as not done", "")
 var removeFlag = goopt.Flag([]string{"--remove"}, nil, "remove the given tasks", "")
 var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task A below task B", "")
+var titleFlag = goopt.Flag([]string{"--title"}, nil, "set the task list title", "")
+var versionFlag = goopt.Flag([]string{"--version"}, nil, "show version", "")
 // Options
 var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
 var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
@@ -73,6 +75,16 @@ func doRemove(tasks TaskList, references []Task) {
 	saveTaskList(tasks)
 }
 
+func doSetTitle(tasks TaskList, args []string) {
+	title := strings.Join(args, " ")
+	tasks.SetTitle(title)
+	saveTaskList(tasks)
+}
+
+func doShowVersion(tasks TaskList) {
+	println(goopt.Version)
+}
+
 func processAction(tasks TaskList) {
 	priority := PriorityFromString(*priorityFlag)
 	var graft TaskNode = tasks
@@ -101,6 +113,10 @@ func processAction(tasks TaskList) {
 		}
 		doReparent(tasks, resolveTaskReference(tasks, goopt.Args[0]),
 							 resolveTaskReference(tasks, goopt.Args[1]))
+	case *titleFlag:
+		doSetTitle(tasks, goopt.Args)
+	case *versionFlag:
+		doShowVersion(tasks)
 	default:
 		doView(tasks)
 	}
@@ -169,7 +185,7 @@ func resolveTaskReferences(tasks TaskList, indices []string) []Task {
 	return references
 }
 
-func loadTaskList() (TaskList, os.Error) {
+func loadTaskList() (tasks TaskList, err os.Error) {
 	// Try loading new-style task file
 	if file, err := os.Open(*fileFlag); err == nil {
 		defer file.Close()
@@ -216,7 +232,7 @@ func main() {
 		return `DevTodo is a program aimed specifically at programmers (but usable by anybody
 at the terminal) to aid in day-to-day development.
 
-It maintains a list of items that have yet to be completed, one for each
+It maintains a list of items that have yet to be completed, one list for each
 project directory. This allows the programmer to track outstanding bugs or
 items that need to be completed with very little effort.
 
@@ -243,6 +259,9 @@ todo2 -d <index>
 	tasks, err := loadTaskList()
 	if err != nil {
 		fatal("%s", err)
+	}
+	if tasks == nil {
+		tasks = NewTaskList()
 	}
 	processAction(tasks)
 }
