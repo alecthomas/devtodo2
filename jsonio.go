@@ -50,7 +50,7 @@ func (self *jsonIO) Serialize(writer io.Writer, tasks TaskList) (err os.Error) {
 	return
 }
 
-// Utilitie functions and structures for marshaling
+// Utility functions and structures for marshaling
 
 type marshalableTask struct {
 	Text string "text"

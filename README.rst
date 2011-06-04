@@ -3,20 +3,20 @@ DevTodo2
 DevTodo2 is a command-line task management utility. Tasks are hierarchically
 organised, have priorities, and track creation and completion time.
 
-Task lists are stored in separate files, allowing for per-project sets of tasks.
+Task lists are stored in the current directory as the file ``.todo2``.
 
 For much more complete information please refer to the man page (todo2(1)).
 
 Installing
 ----------
-DevTodo2 is written in `Go <http://golang.org>`_.
+DevTodo2 is written in `Go <http://golang.org>`_. To install, you will
+need a recent version.
 
-To install, you will need a recent version of Go. Once you have this, you should
-be able to simply type::
+Once you have this, you should be able to simply type::
 
   $ goinstall github.com/alecthomas/devtodo2
 
-If this fails, you can try with::
+If this fails, try::
 
   $ git clone git://github.com/alecthomas/devtodo2.git
   $ cd devtodo2
@@ -43,39 +43,35 @@ List *all* tasks::
 
 DevTodo1?
 ---------
-Yes, this is version 2. Version 1 was written in C++ in 2004, and has been due
-for a rewrite for a very long time.
+Yes, this is version 2. `Version 1 <http://swapoff.org/DevTodo>`_ was written in
+C++ in 2004, and has been due for a rewrite for a very long time.
 
-DevTodo2 will migrate your old ``.todo`` files automatically.
+Differences between version 1 and 2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-What isn't supported in version 2 (yet) that was in version 1:
+New features:
 
-- Readline-based editing of task text and priority is not supported.
-- Filters are not yet supported.
-- Sorting is not supported. Tasks are always shown in priority order.
-- Linked files are not supported.
-- Backups are not supported.
-- ~/.todorc configuration file is not supported.
-- Colour customisation is not supported.
-- Custom task formatting is not supported.
+- Task lists are now stored as JSON.
+- Everything is a *lot* faster.
+- Much less code.
 
-An Aside on Go
---------------
-As an aside, writing this in Go has mostly been a real pleasure. I normally
-code in Python when given a choice, so Go is a nice compromise between the
-expressiveness of Python and the performance of C++.
+Not currently supported:
 
-It also has the nice property of generating completely self-contained binaries,
-which eradicates one of the hassles of distributing Python applications.
+- Readline-based editing of task text and priority.
+- Filters. Completed tasks are hidden by default, but may be displayed with -A.
+- Sorting. Tasks are always shown in priority order.
+- Linked files.
+- Backups.
+- ~/.todorc configuration file.
+- Colour customisation.
+- Custom task formatting.
 
-On the downside, some things are much more verbose in Go than they are in
-Python. This is mostly due to a lack of exceptions. For example, the following
-code in Python will expand a task range (eg. 1.2.3-10)::
+How do I import my version 1 task lists?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DevTodo2 will load your old ``.todo`` files automatically. If you modify the
+task list with DevTodo2 it will transparently migrate the file to ``.todo2`` in
+the new format.
 
-	def expand_range(index):
-	  start_index, end = index.split('-')
-	  start_index, start = start_index.rsplit('.', 1)
-	  for i in range(int(start), int(end) + 1):
-	    yield '%s.%s' % (start_index, str(i))
-  
-This is *vastly* more complicated in Go.
+You can specify the version 1 filename to load with
+``--legacy-file=<filename>``, and the version 2 filename with
+``--file=<filename>``.

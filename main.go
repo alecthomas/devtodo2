@@ -27,6 +27,7 @@ import (
 
 // Actions
 var addFlag = goopt.Flag([]string{"-a", "--add"}, nil, "add a task", "")
+var editFlag = goopt.Flag([]string{"-e", "--edit"}, nil, "edit a task, replacing its text", "")
 var markDoneFlag = goopt.Flag([]string{"-d", "--done"}, nil, "mark the given tasks as done", "")
 var markNotDoneFlag = goopt.Flag([]string{"-D", "--not-done"}, nil, "mark the given tasks as not done", "")
 var removeFlag = goopt.Flag([]string{"--remove"}, nil, "remove the given tasks", "")
@@ -49,6 +50,11 @@ func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
 	saveTaskList(tasks)
 }
 
+func doEditTask(tasks TaskList, task Task, priority Priority, text string) {
+	if text != "" {
+	}
+}
+
 func doMarkDone(tasks TaskList, references []Task) {
 	for _, task := range references {
 		task.SetCompleted()
@@ -65,6 +71,7 @@ func doMarkNotDone(tasks TaskList, references []Task) {
 
 func doReparent(tasks TaskList, task Task, below Task) {
 	task.Reparent(below)
+	doView(tasks)
 	saveTaskList(tasks)
 }
 
@@ -117,6 +124,16 @@ func processAction(tasks TaskList) {
 		doSetTitle(tasks, goopt.Args)
 	case *versionFlag:
 		doShowVersion(tasks)
+	case *editFlag:
+		if len(goopt.Args) != 1 {
+			fatal("expected <task>")
+		}
+		task := tasks.Find(goopt.Args[0])
+		if task == nil {
+			fatal("invalid task %s", goopt.Args[0])
+		}
+		text := strings.Join(goopt.Args[1:], " ")
+		doEditTask(tasks, task, priority, text)
 	default:
 		doView(tasks)
 	}

@@ -54,11 +54,9 @@ func TestDelete(t *testing.T) {
 func TestReparent(t *testing.T) {
 	tasks := NewTaskList()
 	a := tasks.Create("do A", MEDIUM)
-	a.Create("do AA", MEDIUM)
-	bb := a.Create("do BB", MEDIUM)
 	b := tasks.Create("do B", MEDIUM)
-	bb.Reparent(b)
-	if bb.Parent().Equal(b) {
+	a.Reparent(b)
+	if a.Parent().Equal(b) {
 		t.Fail()
 	}
 }
