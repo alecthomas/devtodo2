@@ -61,7 +61,6 @@ Not currently supported:
 - Filters. Completed tasks are hidden by default, but may be displayed with -A.
 - Sorting. Tasks are always shown in priority order.
 - Linked files.
-- Backups.
 - ~/.todorc configuration file.
 - Colour customisation.
 - Custom task formatting.

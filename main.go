@@ -20,7 +20,6 @@ import (
 	"fmt"
 	goopt "github.com/droundy/goopt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -232,16 +231,16 @@ func loadTaskList() (tasks TaskList, err os.Error) {
 
 func saveTaskList(tasks TaskList) (err os.Error) {
 	path := *fileFlag
-	if path, err = filepath.Abs(path); err != nil {
-		return err
-	}
-	dir, file := filepath.Split(path)
-	temp := filepath.Join(dir, file + "~")
+	previous := path + "~"
+	temp := path + "~~"
 	if file, err := os.Create(temp); err == nil {
 		defer func () {
 			if err = file.Close(); err != nil {
 				os.Remove(temp)
 			} else {
+				if err = os.Rename(path, previous); err != nil {
+					fatal("unable to rename %s to %s", path, previous)
+				}
 				if err = os.Rename(temp, path); err != nil {
 					fatal("unable to rename %s to %s", temp, path)
 				}
@@ -276,7 +275,10 @@ todo2 [-p <priority>] -a <text>
   Create a new task.
 
 todo2 -d <index>
-  Mark a task as complete.`
+  Mark a task as complete.
+
+todo2 [-p <priority>] -e <task> [<text>]
+  Edit an existing task.`
 	}
 	goopt.Summary = "DevTodo2 - a hierarchical command-line task manager"
 	goopt.Usage = func () string {
