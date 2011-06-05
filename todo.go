@@ -41,7 +41,6 @@ type TaskListIO interface {
 }
 
 type TaskNode interface {
-	// Return an iterator over child tasks. nil if no children.
 	At(index int) Task
 	Len() int
 	Equal(other TaskNode) bool
@@ -51,7 +50,6 @@ type TaskNode interface {
 
 	Append(child TaskNode)
 	Create(title string, priority Priority) Task
-	Reparent(below TaskNode)
 	Delete()
 }
 
@@ -156,11 +154,6 @@ func (self *taskNodeImpl) Create(title string, priority Priority) Task {
 	task := newTask(title, priority)
 	self.Append(task)
 	return task
-}
-
-func (self *taskNodeImpl) Reparent(below TaskNode) {
-	self.Delete()
-	below.Append(self)
 }
 
 func (self *taskNodeImpl) Delete() {
@@ -277,4 +270,9 @@ func (self *taskListImpl) Title() string {
 
 func (self *taskListImpl) SetTitle(title string) {
 	self.title = title
+}
+
+func ReparentTask(node TaskNode, below TaskNode) {
+	node.Delete()
+	below.Append(node)
 }

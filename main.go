@@ -69,9 +69,8 @@ func doMarkNotDone(tasks TaskList, references []Task) {
 	saveTaskList(tasks)
 }
 
-func doReparent(tasks TaskList, task Task, below Task) {
-	task.Reparent(below)
-	doView(tasks)
+func doReparent(tasks TaskList, task TaskNode, below TaskNode) {
+	ReparentTask(task, below)
 	saveTaskList(tasks)
 }
 
@@ -115,11 +114,16 @@ func processAction(tasks TaskList) {
 	case *removeFlag:
 		doRemove(tasks, resolveTaskReferences(tasks, goopt.Args))
 	case *reparentFlag:
-		if len(goopt.Args) != 2 {
-			fatal("expected <task> <new-parent> for reparenting")
+		if len(goopt.Args) < 1 {
+			fatal("expected <task> [<new-parent>] for reparenting")
 		}
-		doReparent(tasks, resolveTaskReference(tasks, goopt.Args[0]),
-							 resolveTaskReference(tasks, goopt.Args[1]))
+		var below TaskNode
+		if len(goopt.Args) == 2 {
+			below = resolveTaskReference(tasks, goopt.Args[1])
+		} else {
+			below = tasks
+		}
+		doReparent(tasks, resolveTaskReference(tasks, goopt.Args[0]), below)
 	case *titleFlag:
 		doSetTitle(tasks, goopt.Args)
 	case *versionFlag:
