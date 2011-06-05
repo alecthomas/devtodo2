@@ -35,7 +35,7 @@ var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task 
 var titleFlag = goopt.Flag([]string{"--title"}, nil, "set the task list title", "")
 var versionFlag = goopt.Flag([]string{"--version"}, nil, "show version", "")
 // Options
-var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
+var priorityFlag = goopt.String([]string{"-p", "--priority"}, "", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
 var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
 var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
@@ -52,7 +52,12 @@ func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
 
 func doEditTask(tasks TaskList, task Task, priority Priority, text string) {
 	if text != "" {
+		task.SetText(text)
 	}
+	if priority != -1 {
+		task.SetPriority(priority)
+	}
+	saveTaskList(tasks)
 }
 
 func doMarkDone(tasks TaskList, references []Task) {
@@ -129,14 +134,17 @@ func processAction(tasks TaskList) {
 	case *versionFlag:
 		doShowVersion(tasks)
 	case *editFlag:
-		if len(goopt.Args) != 1 {
-			fatal("expected <task>")
+		if len(goopt.Args) < 1 {
+			fatal("expected [-p <priority>] <task> [<text>]")
 		}
 		task := tasks.Find(goopt.Args[0])
 		if task == nil {
 			fatal("invalid task %s", goopt.Args[0])
 		}
 		text := strings.Join(goopt.Args[1:], " ")
+		if *priorityFlag == "" {
+			priority = -1
+		}
 		doEditTask(tasks, task, priority, text)
 	default:
 		doView(tasks)
