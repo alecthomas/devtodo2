@@ -238,8 +238,10 @@ func saveTaskList(tasks TaskList) (err os.Error) {
 			if err = file.Close(); err != nil {
 				os.Remove(temp)
 			} else {
-				if err = os.Rename(path, previous); err != nil {
-					fatal("unable to rename %s to %s", path, previous)
+				if _, err := os.Stat(path); err == nil {
+					if err = os.Rename(path, previous); err != nil {
+						fatal("unable to rename %s to %s", path, previous)
+					}
 				}
 				if err = os.Rename(temp, path); err != nil {
 					fatal("unable to rename %s to %s", temp, path)
