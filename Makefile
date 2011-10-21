@@ -1,17 +1,11 @@
 include $(GOROOT)/src/Make.inc
 
-everything: todo2 todo2.1
+#everything: todo2 todo2.1
 
 TARG=todo2
-GOFILES=tiocgwinsz.go todo.go consoleview.go legacyio.go jsonio.go main.go
+GOFILES=todo.go consoleview.go legacyio.go jsonio.go main.go
 
 include $(GOROOT)/src/Make.cmd
-
-tiocgwinsz: tiocgwinsz.c
-	cc $< -o $@
-
-tiocgwinsz.go: tiocgwinsz
-	./tiocgwinsz
 
 todo2.1: $(GOFILES)
 	./todo2 --create-manpage > $@

@@ -169,11 +169,11 @@ func expandRange(indexRange string) []string {
 	//   start_index, start = start_index.rsplit('.', 1)
 	//   for i in range(int(start), int(end) + 1):
 	//     yield '%s.%s' % (start_index, str(i))
-	ranges := strings.Split(indexRange, "-", -1)
+	ranges := strings.Split(indexRange, "-")
 	if len(ranges) != 2 {
 		return nil
 	}
-	startIndex := strings.Split(ranges[0], ".", -1)
+	startIndex := strings.Split(ranges[0], ".")
 	start, err := strconv.Atoi(startIndex[len(startIndex) - 1])
 	if err != nil { return nil }
 	end, err := strconv.Atoi(ranges[1])

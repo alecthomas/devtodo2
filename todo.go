@@ -238,7 +238,7 @@ func NewTaskList() TaskList {
 
 // Convert "1.2.3" to int[]{0, 1, 2} ready for indexing into TaskNodes
 func indexFromString(index string) Index {
-	tokens := strings.Split(index, ".", -1)
+	tokens := strings.Split(index, ".")
 	numericIndex := make(Index, len(tokens))
 	for i, token := range tokens {
 		value, err := strconv.Atoi(token)
