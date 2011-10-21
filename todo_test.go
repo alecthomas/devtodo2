@@ -55,7 +55,7 @@ func TestReparent(t *testing.T) {
 	tasks := NewTaskList()
 	a := tasks.Create("do A", MEDIUM)
 	b := tasks.Create("do B", MEDIUM)
-	a.Reparent(b)
+	ReparentTask(a, b)
 	if a.Parent().Equal(b) {
 		t.Fail()
 	}

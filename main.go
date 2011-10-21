@@ -39,9 +39,10 @@ var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft n
 var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
 var allFlag = goopt.Flag([]string{"-A", "--all"}, nil, "show all tasks, even completed ones", "")
+var summaryFlag = goopt.Flag([]string{"-s", "--summary"}, nil, "summarise tasks to one line", "")
 
 func doView(tasks TaskList) {
-	ConsoleView(tasks, *allFlag)
+	ConsoleView(tasks, *allFlag, *summaryFlag)
 }
 
 func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
