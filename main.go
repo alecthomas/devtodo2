@@ -34,7 +34,7 @@ var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task 
 var titleFlag = goopt.Flag([]string{"--title"}, nil, "set the task list title", "")
 var versionFlag = goopt.Flag([]string{"--version"}, nil, "show version", "")
 // Options
-var priorityFlag = goopt.String([]string{"-p", "--priority"}, "", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
+var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
 var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
 var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")

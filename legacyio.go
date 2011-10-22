@@ -32,10 +32,10 @@ type legacyIO struct {
 }
 
 type xmlNote struct {
-	Priority string "attr"
-	Time string "attr"
-	Done string "attr"
-	Text string "chardata"
+	Priority string `xml:"attr"`
+	Time string `xml:"attr"`
+	Done string `xml:"attr"`
+	Text string `xml:"chardata"`
 	Note []xmlNote
 }
 

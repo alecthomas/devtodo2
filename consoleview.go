@@ -87,7 +87,7 @@ func taskState(task Task) int {
 }
 
 func fatal(format string, args ...interface{}) {
-	fmt.Printf("error: %s\n", fmt.Sprintf(format, args...))
+	fmt.Fprintf(os.Stderr, "error: %s\n", fmt.Sprintf(format, args...))
 	os.Exit(1)
 }
 
@@ -137,8 +137,10 @@ func consoleDisplayTask(width, depth, index int, task Task, showAll bool, summar
 	if depth >= 0 {
 		formatTask(width, depth, index, task, summarise)
 	}
-	for i := 0; i < task.Len(); i++ {
-		consoleDisplayTask(width, depth+1, i, task.At(i), showAll, summarise)
+	if !summarise {
+		for i := 0; i < task.Len(); i++ {
+			consoleDisplayTask(width, depth+1, i, task.At(i), showAll, summarise)
+		}
 	}
 }
 

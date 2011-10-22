@@ -53,16 +53,16 @@ func (self *jsonIO) Serialize(writer io.Writer, tasks TaskList) (err os.Error) {
 // Utility functions and structures for marshaling
 
 type marshalableTask struct {
-	Text string "text"
-	Priority string "priority"
-	Creation int64 "creation"
-	Completion int64 "completion"
-	Tasks []*marshalableTask "tasks"
+	Text string `json:"text"`
+	Priority string `json:"priority"`
+	Creation int64 `json:"creation"`
+	Completion int64 `json:"completion"`
+	Tasks []*marshalableTask `json:"tasks"`
 }
 
 type marshalableTaskList struct {
-	Title string "title"
-	Tasks []*marshalableTask "tasks"
+	Title string `json:"title"`
+	Tasks []*marshalableTask `json:"tasks"`
 }
 
 func toMarshalableTaskList(t TaskList) *marshalableTaskList {
