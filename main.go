@@ -39,7 +39,8 @@ var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft n
 var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
 var allFlag = goopt.Flag([]string{"-A", "--all"}, nil, "show all tasks, even completed ones", "")
-var summaryFlag = goopt.Flag([]string{"-s", "--summary"}, nil, "summarise tasks to one line", "")
+var summaryFlag = goopt.Flag([]string{"-s", "--summary"}, []string{"--nosummary"}, "summarise tasks to one line", "")
+var orderFlag = goopt.Flag([]string{"--order"}, nil, "specify display order of tasks (created,completed,text,priority,duration,done)", "priority")
 
 func doView(tasks TaskList) {
 	ConsoleView(tasks, *allFlag, *summaryFlag)
@@ -230,15 +231,19 @@ func loadTaskList() (tasks TaskList, err os.Error) {
 	return nil, nil
 }
 
-func saveTaskList(tasks TaskList) (err os.Error) {
+func saveTaskList(tasks TaskList) {
 	path := *fileFlag
 	previous := path + "~"
 	temp := path + "~~"
+	var serializeError os.Error = nil
 	if file, err := os.Create(temp); err == nil {
 		defer func () {
 			if err = file.Close(); err != nil {
 				os.Remove(temp)
 			} else {
+				if serializeError != nil {
+					return
+				}
 				if _, err := os.Stat(path); err == nil {
 					if err = os.Rename(path, previous); err != nil {
 						fatal("unable to rename %s to %s", path, previous)
@@ -250,9 +255,10 @@ func saveTaskList(tasks TaskList) (err os.Error) {
 			}
 		}()
 		writer := NewJsonIO()
-		return writer.Serialize(file, tasks)
+		if serializeError = writer.Serialize(file, tasks); serializeError != nil {
+			fatal(serializeError.String())
+		}
 	}
-	return nil
 }
 
 func main() {

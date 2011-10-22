@@ -20,6 +20,7 @@ import (
 	"container/vector"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -33,6 +34,17 @@ const (
 	MEDIUM
 	HIGH
 	VERYHIGH
+)
+
+type Order int
+
+const (
+	CREATED = Order(iota)
+	COMPLETED
+	TEXT
+	PRIORITY
+	DURATION
+	DONE
 )
 
 type TaskListIO interface {
@@ -79,6 +91,65 @@ type TaskList interface {
 	Find(index string) Task
 }
 
+type TaskView struct {
+	tasks []Task
+	order Order
+}
+
+func CreateTaskView(node TaskNode, order Order) *TaskView {
+	view := &TaskView{
+		tasks: make([]Task, node.Len()),
+		order: order,
+	}
+	for i := 0; i < node.Len(); i++ {
+		view.tasks[i] = node.At(i)
+	}
+	sort.Sort(view)
+	return view
+}
+
+func (self *TaskView) Len() int {
+	return len(self.tasks)
+}
+
+func (self *TaskView) Less(i, j int) bool {
+	left := self.tasks[i]
+	right := self.tasks[j]
+	switch self.order {
+	case CREATED:
+		return left.CreationTime().Seconds() < right.CreationTime().Seconds()
+	case COMPLETED:
+		return left.CompletionTime().Seconds() < right.CompletionTime().Seconds()
+	case TEXT:
+		return left.Text() < right.Text()
+	case PRIORITY:
+		return left.Priority() < right.Priority()
+	case DURATION:
+		var leftDuration, rightDuration int64
+		leftCompletion := left.CompletionTime()
+		rightCompletion := right.CompletionTime()
+		if leftCompletion != nil {
+			leftDuration = leftCompletion.Seconds() - left.CreationTime().Seconds()
+		} else {
+			leftDuration = 0
+		}
+		if rightCompletion != nil {
+			rightDuration = rightCompletion.Seconds() - right.CreationTime().Seconds()
+		} else {
+			rightDuration = 0
+		}
+		return leftDuration < rightDuration
+	case DONE:
+		return left.CompletionTime() != nil && right.CompletionTime() == nil
+	}
+	panic("invalid ordering")
+}
+
+func (self *TaskView) Swap(i, j int) {
+	self.tasks[j], self.tasks[i] = self.tasks[i], self.tasks[j]
+}
+
+
 // Index referencing a task
 type Index []int
 
@@ -109,6 +180,22 @@ func PriorityFromString(priority string) Priority {
 		return p
 	}
 	return MEDIUM
+}
+
+var orderFromString map[string]Order = map[string]Order {
+	"created": CREATED,
+	"completed": COMPLETED,
+	"text": TEXT,
+	"priority": PRIORITY,
+	"duration": DURATION,
+	"done": DONE,
+}
+
+func OrderFromString(order string) Order {
+	if o, ok := orderFromString[order]; ok {
+		return o
+	}
+	return PRIORITY
 }
 
 type taskNodeImpl struct {
