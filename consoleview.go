@@ -108,15 +108,15 @@ func printWrappedText(text string, width, subsequentIndent int) {
 	}
 }
 
-func formatTask(width, depth, index int, task Task, summarise bool) {
+func formatTask(width, depth int, task Task, options *ViewOptions) {
 	indent := depth*4 + 4
 	width -= indent
 	state := taskState(task)
 	fmt.Printf("%s%s%c%2d.%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state,
-		index+1, RESET, colourPriorityMap[task.Priority()])
+		task.Id()+1, RESET, colourPriorityMap[task.Priority()])
 	var text string = task.Text()
 	trimmed := false
-	if summarise {
+	if options.Summarise {
 		if len(text) > width {
 			text = strings.TrimSpace(text[:width - 1])
 			trimmed = true
@@ -130,28 +130,46 @@ func formatTask(width, depth, index int, task Task, summarise bool) {
 	}
 }
 
-func consoleDisplayTask(width, depth, index int, task Task, showAll bool, summarise bool) {
-	if depth >= 0 && (!showAll && task.CompletionTime() != nil) {
+func consoleDisplayTask(width, depth int, task Task, options *ViewOptions) {
+	if depth >= 0 && (!options.ShowAll && task.CompletionTime() != nil) {
 		return
 	}
 	if depth >= 0 {
-		formatTask(width, depth, index, task, summarise)
+		formatTask(width, depth, task, options)
 	}
-	if !summarise {
-		for i := 0; i < task.Len(); i++ {
-			consoleDisplayTask(width, depth+1, i, task.At(i), showAll, summarise)
+	if !options.Summarise {
+		view := CreateTaskView(task, options)
+		for i := 0; i < view.Len(); i++ {
+			consoleDisplayTask(width, depth+1, view.At(i), options)
 		}
 	}
 }
 
-func ConsoleView(tasks TaskList, showAll bool, summarise bool) {
+type ConsoleView struct {}
+
+func NewConsoleView() *ConsoleView {
+	return &ConsoleView{}
+}
+
+func (self *ConsoleView) ShowTree(tasks TaskList, options *ViewOptions) {
 	width := getTerminalWidth()
 	if tasks.Title() != "" {
 		fmt.Print(TITLE_COLOUR)
 		printWrappedText("    "+tasks.Title(), width, 4)
 		fmt.Printf("%s\n", RESET)
 	}
-	for i := 0; i < tasks.Len(); i++ {
-		consoleDisplayTask(width, 0, i, tasks.At(i), showAll, summarise)
+	view := CreateTaskView(tasks, options)
+	for i := 0; i < view.Len(); i++ {
+		consoleDisplayTask(width, 0, view.At(i), options)
 	}
+}
+
+func (self *ConsoleView) ShowTaskInfo(task Task) {
+	width := getTerminalWidth()
+	fmt.Print(colourPriorityMap[task.Priority()])
+	printWrappedText(task.Text(), width, 0)
+	fmt.Printf("%s\n\n", RESET)
+	fmt.Printf("%sPriority%s %s%s%s\n", BRIGHT, RESET, colourPriorityMap[task.Priority()], task.Priority().String(), RESET)
+	fmt.Printf("%sCreated:%s %s\n", BRIGHT, RESET, task.CreationTime().String())
+	fmt.Printf("%sCompleted:%s %s\n", BRIGHT, RESET, task.CompletionTime().String())
 }

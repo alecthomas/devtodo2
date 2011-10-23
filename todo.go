@@ -20,7 +20,6 @@ import (
 	"container/vector"
 	"io"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -53,6 +52,7 @@ type TaskListIO interface {
 }
 
 type TaskNode interface {
+	Id() int
 	At(index int) Task
 	Len() int
 	Equal(other TaskNode) bool
@@ -91,65 +91,6 @@ type TaskList interface {
 	Find(index string) Task
 }
 
-type TaskView struct {
-	tasks []Task
-	order Order
-}
-
-func CreateTaskView(node TaskNode, order Order) *TaskView {
-	view := &TaskView{
-		tasks: make([]Task, node.Len()),
-		order: order,
-	}
-	for i := 0; i < node.Len(); i++ {
-		view.tasks[i] = node.At(i)
-	}
-	sort.Sort(view)
-	return view
-}
-
-func (self *TaskView) Len() int {
-	return len(self.tasks)
-}
-
-func (self *TaskView) Less(i, j int) bool {
-	left := self.tasks[i]
-	right := self.tasks[j]
-	switch self.order {
-	case CREATED:
-		return left.CreationTime().Seconds() < right.CreationTime().Seconds()
-	case COMPLETED:
-		return left.CompletionTime().Seconds() < right.CompletionTime().Seconds()
-	case TEXT:
-		return left.Text() < right.Text()
-	case PRIORITY:
-		return left.Priority() < right.Priority()
-	case DURATION:
-		var leftDuration, rightDuration int64
-		leftCompletion := left.CompletionTime()
-		rightCompletion := right.CompletionTime()
-		if leftCompletion != nil {
-			leftDuration = leftCompletion.Seconds() - left.CreationTime().Seconds()
-		} else {
-			leftDuration = 0
-		}
-		if rightCompletion != nil {
-			rightDuration = rightCompletion.Seconds() - right.CreationTime().Seconds()
-		} else {
-			rightDuration = 0
-		}
-		return leftDuration < rightDuration
-	case DONE:
-		return left.CompletionTime() != nil && right.CompletionTime() == nil
-	}
-	panic("invalid ordering")
-}
-
-func (self *TaskView) Swap(i, j int) {
-	self.tasks[j], self.tasks[i] = self.tasks[i], self.tasks[j]
-}
-
-
 // Index referencing a task
 type Index []int
 
@@ -183,30 +124,62 @@ func PriorityFromString(priority string) Priority {
 }
 
 var orderFromString map[string]Order = map[string]Order {
+	"started": CREATED,
+	"start": CREATED,
+	"creation": CREATED,
 	"created": CREATED,
+	"finish": COMPLETED,
+	"finished": COMPLETED,
+	"completion": COMPLETED,
 	"completed": COMPLETED,
 	"text": TEXT,
 	"priority": PRIORITY,
+	"length": DURATION,
+	"lifetime": DURATION,
 	"duration": DURATION,
 	"done": DONE,
 }
 
-func OrderFromString(order string) Order {
-	if o, ok := orderFromString[order]; ok {
-		return o
+var orderToString map[Order]string = map[Order]string {
+	CREATED: "created",
+	COMPLETED: "completed",
+	TEXT: "text",
+	PRIORITY: "priority",
+	DURATION: "duration",
+	DONE: "done",
+}
+
+func (self Order) String() string {
+	return orderToString[self]
+}
+
+func OrderFromString(order string) (Order, bool) {
+	reversed := false
+	if len(order) >= 1 && order[0] == '-' {
+		reversed = true
+		order = order[1:]
 	}
-	return PRIORITY
+	if o, ok := orderFromString[order]; ok {
+		return o, reversed
+	}
+	return PRIORITY, false
 }
 
 type taskNodeImpl struct {
+	id int
 	tasks vector.Vector
 	parent TaskNode
 }
 
-func newTaskNode() *taskNodeImpl {
+func newTaskNode(id int) *taskNodeImpl {
 	return &taskNodeImpl{
+		id: id,
 		parent: nil,
 	}
+}
+
+func (self *taskNodeImpl) Id() int {
+	return self.id
 }
 
 func (self *taskNodeImpl) Equal(other TaskNode) bool {
@@ -238,7 +211,7 @@ func (self *taskNodeImpl) Append(child TaskNode) {
 }
 
 func (self *taskNodeImpl) Create(title string, priority Priority) Task {
-	task := newTask(title, priority)
+	task := newTask(self.Len(), title, priority)
 	self.Append(task)
 	return task
 }
@@ -265,14 +238,18 @@ type taskImpl struct {
 	created, completed *time.Time
 }
 
-func newTask(text string, priority Priority) Task {
+func newTask(id int, text string, priority Priority) Task {
 	return &taskImpl{
-		taskNodeImpl: newTaskNode(),
+		taskNodeImpl: newTaskNode(id),
 		text: text,
 		priority: priority,
 		created: time.UTC(),
 		completed: nil,
 	}
+}
+
+func (self *taskImpl) Id() int {
+	return self.id
 }
 
 func (self *taskImpl) SetCreationTime(time *time.Time) {
@@ -318,7 +295,7 @@ type taskListImpl struct {
 
 func NewTaskList() TaskList {
 	return &taskListImpl{
-		taskNodeImpl: newTaskNode(),
+		taskNodeImpl: newTaskNode(-1),
 		title: "",
 	}
 }
@@ -335,6 +312,10 @@ func indexFromString(index string) Index {
 		numericIndex[i] = value - 1
 	}
 	return numericIndex
+}
+
+func (self *taskListImpl) Id() int {
+	return -1
 }
 
 func (self *taskListImpl) Find(index string) Task {

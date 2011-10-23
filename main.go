@@ -33,17 +33,26 @@ var removeFlag = goopt.Flag([]string{"--remove"}, nil, "remove the given tasks",
 var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task A below task B", "")
 var titleFlag = goopt.Flag([]string{"--title"}, nil, "set the task list title", "")
 var versionFlag = goopt.Flag([]string{"--version"}, nil, "show version", "")
+var infoFlag = goopt.Flag([]string{"-i", "--info"}, nil, "show information on a task", "")
 // Options
 var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
 var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
 var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
 var allFlag = goopt.Flag([]string{"-A", "--all"}, nil, "show all tasks, even completed ones", "")
-var summaryFlag = goopt.Flag([]string{"-s", "--summary"}, []string{"--nosummary"}, "summarise tasks to one line", "")
-var orderFlag = goopt.Flag([]string{"--order"}, nil, "specify display order of tasks (created,completed,text,priority,duration,done)", "priority")
+var summaryFlag = goopt.Flag([]string{"-s", "--summary"}, nil, "summarise tasks to one line", "")
+var orderFlag = goopt.String([]string{"--order"}, "priority", "specify display order of tasks (created,completed,text,priority,duration,done)")
 
 func doView(tasks TaskList) {
-	ConsoleView(tasks, *allFlag, *summaryFlag)
+	order, reversed := OrderFromString(*orderFlag)
+	options := &ViewOptions{
+		ShowAll: *allFlag,
+		Summarise: *summaryFlag,
+		Order: order,
+		Reversed: reversed,
+	}
+	view := NewConsoleView()
+	view.ShowTree(tasks, options)
 }
 
 func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
@@ -93,8 +102,17 @@ func doSetTitle(tasks TaskList, args []string) {
 	saveTaskList(tasks)
 }
 
-func doShowVersion(tasks TaskList) {
+func doShowVersion() {
 	println(goopt.Version)
+}
+
+func doShowInfo(tasks TaskList, index string) {
+	task := tasks.Find(index)
+	if task == nil {
+		fatal("no such task %s", index)
+	}
+	view := NewConsoleView()
+	view.ShowTaskInfo(task)
 }
 
 func processAction(tasks TaskList) {
@@ -133,7 +151,12 @@ func processAction(tasks TaskList) {
 	case *titleFlag:
 		doSetTitle(tasks, goopt.Args)
 	case *versionFlag:
-		doShowVersion(tasks)
+		doShowVersion()
+	case *infoFlag:
+		if len(goopt.Args) < 1 {
+			fatal("expected <task> for info")
+		}
+		doShowInfo(tasks, goopt.Args[0])
 	case *editFlag:
 		if len(goopt.Args) < 1 {
 			fatal("expected [-p <priority>] <task> [<text>]")
@@ -263,7 +286,7 @@ func saveTaskList(tasks TaskList) {
 
 func main() {
 	goopt.Suite = "DevTodo2"
-	goopt.Version = "2.0"
+	goopt.Version = "2.1"
 	goopt.Author = "Alec Thomas <alec@swapoff.org>"
 	goopt.Description = func() string {
 		return `DevTodo is a program aimed specifically at programmers (but usable by anybody
