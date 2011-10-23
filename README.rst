@@ -59,7 +59,6 @@ Not currently supported:
 
 - Readline-based editing of task text and priority.
 - Filters. Completed tasks are hidden by default, but may be displayed with -A.
-- Sorting. Tasks are always shown in priority order.
 - Linked files.
 - ~/.todorc configuration file.
 - Colour customisation.
