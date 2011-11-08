@@ -17,7 +17,6 @@
 package main
 
 import (
-	"container/vector"
 	"io"
 	"os"
 	"strconv"
@@ -167,7 +166,7 @@ func OrderFromString(order string) (Order, bool) {
 
 type taskNodeImpl struct {
 	id int
-	tasks vector.Vector
+	tasks []TaskNode
 	parent TaskNode
 }
 
@@ -187,14 +186,14 @@ func (self *taskNodeImpl) Equal(other TaskNode) bool {
 }
 
 func (self *taskNodeImpl) Len() int {
-	return self.tasks.Len()
+	return len(self.tasks)
 }
 
 func (self *taskNodeImpl) At(index int) Task {
 	if index >= len(self.tasks) {
 		return nil
 	}
-	return self.tasks.At(index).(Task)
+	return self.tasks[index].(Task)
 }
 
 func (self *taskNodeImpl) Parent() TaskNode {
@@ -207,7 +206,7 @@ func (self *taskNodeImpl) SetParent(parent TaskNode) {
 
 func (self *taskNodeImpl) Append(child TaskNode) {
 	child.SetParent(self)
-	self.tasks.Push(child)
+	self.tasks = append(self.tasks, child)
 }
 
 func (self *taskNodeImpl) Create(title string, priority Priority) Task {
@@ -223,7 +222,7 @@ func (self *taskNodeImpl) Delete() {
 	}
 	for i := 0; i < parent.Len(); i++ {
 		if parent.At(i).Equal(self) {
-			parent.tasks.Delete(i)
+			parent.tasks = append(parent.tasks[:i], parent.tasks[i+1:]...)
 			self.parent = nil
 			return
 		}
