@@ -17,9 +17,9 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
-	"json"
-	"os"
+
 	"time"
 )
 
@@ -31,7 +31,7 @@ func NewJsonIO() TaskListIO {
 	return &jsonIO{}
 }
 
-func (self *jsonIO) Deserialize(reader io.Reader) (tasks TaskList, err os.Error) {
+func (self *jsonIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
 	decoder := json.NewDecoder(reader)
 	mtl := &marshalableTaskList{}
 	if err = decoder.Decode(&mtl); err == nil {
@@ -40,7 +40,7 @@ func (self *jsonIO) Deserialize(reader io.Reader) (tasks TaskList, err os.Error)
 	return
 }
 
-func (self *jsonIO) Serialize(writer io.Writer, tasks TaskList) (err os.Error) {
+func (self *jsonIO) Serialize(writer io.Writer, tasks TaskList) (err error) {
 	translated := toMarshalableTaskList(tasks)
 	data, err := json.MarshalIndent(translated, "", "  ")
 	if err != nil {
@@ -53,15 +53,15 @@ func (self *jsonIO) Serialize(writer io.Writer, tasks TaskList) (err os.Error) {
 // Utility functions and structures for marshaling
 
 type marshalableTask struct {
-	Text string `json:"text"`
-	Priority string `json:"priority"`
-	Creation int64 `json:"creation"`
-	Completion int64 `json:"completion"`
-	Tasks []*marshalableTask `json:"tasks"`
+	Text       string             `json:"text"`
+	Priority   string             `json:"priority"`
+	Creation   int64              `json:"creation"`
+	Completion int64              `json:"completion"`
+	Tasks      []*marshalableTask `json:"tasks"`
 }
 
 type marshalableTaskList struct {
-	Title string `json:"title"`
+	Title string             `json:"title"`
 	Tasks []*marshalableTask `json:"tasks"`
 }
 
@@ -84,11 +84,11 @@ func toMarshalableTask(n TaskNode) []*marshalableTask {
 			completed = t.CompletionTime().Seconds()
 		}
 		children[i] = &marshalableTask{
-			Text: t.Text(),
-			Priority: t.Priority().String(),
-			Creation: created,
+			Text:       t.Text(),
+			Priority:   t.Priority().String(),
+			Creation:   created,
 			Completion: completed,
-			Tasks: toMarshalableTask(t),
+			Tasks:      toMarshalableTask(t),
 		}
 	}
 	return children

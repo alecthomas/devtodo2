@@ -18,7 +18,6 @@ package main
 
 import (
 	"io"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -46,8 +45,8 @@ const (
 )
 
 type TaskListIO interface {
-	Deserialize(reader io.Reader) (TaskList, os.Error)
-	Serialize(writer io.Writer, tasks TaskList) os.Error
+	Deserialize(reader io.Reader) (TaskList, error)
+	Serialize(writer io.Writer, tasks TaskList) error
 }
 
 type TaskNode interface {
@@ -95,20 +94,20 @@ type Index []int
 
 // Implementation
 
-var priorityMapFromString map[string]Priority = map[string]Priority {
+var priorityMapFromString map[string]Priority = map[string]Priority{
 	"veryhigh": VERYHIGH,
-	"high": HIGH,
-	"medium": MEDIUM,
-	"low": LOW,
-	"verylow": VERYLOW,
+	"high":     HIGH,
+	"medium":   MEDIUM,
+	"low":      LOW,
+	"verylow":  VERYLOW,
 }
 
-var priorityToString map[Priority]string = map[Priority]string {
+var priorityToString map[Priority]string = map[Priority]string{
 	VERYHIGH: "veryhigh",
-	HIGH: "high",
-	MEDIUM: "medium",
-	VERYLOW: "verylow",
-	LOW: "low",
+	HIGH:     "high",
+	MEDIUM:   "medium",
+	VERYLOW:  "verylow",
+	LOW:      "low",
 }
 
 func (p Priority) String() string {
@@ -122,30 +121,30 @@ func PriorityFromString(priority string) Priority {
 	return MEDIUM
 }
 
-var orderFromString map[string]Order = map[string]Order {
-	"started": CREATED,
-	"start": CREATED,
-	"creation": CREATED,
-	"created": CREATED,
-	"finish": COMPLETED,
-	"finished": COMPLETED,
+var orderFromString map[string]Order = map[string]Order{
+	"started":    CREATED,
+	"start":      CREATED,
+	"creation":   CREATED,
+	"created":    CREATED,
+	"finish":     COMPLETED,
+	"finished":   COMPLETED,
 	"completion": COMPLETED,
-	"completed": COMPLETED,
-	"text": TEXT,
-	"priority": PRIORITY,
-	"length": DURATION,
-	"lifetime": DURATION,
-	"duration": DURATION,
-	"done": DONE,
+	"completed":  COMPLETED,
+	"text":       TEXT,
+	"priority":   PRIORITY,
+	"length":     DURATION,
+	"lifetime":   DURATION,
+	"duration":   DURATION,
+	"done":       DONE,
 }
 
-var orderToString map[Order]string = map[Order]string {
-	CREATED: "created",
+var orderToString map[Order]string = map[Order]string{
+	CREATED:   "created",
 	COMPLETED: "completed",
-	TEXT: "text",
-	PRIORITY: "priority",
-	DURATION: "duration",
-	DONE: "done",
+	TEXT:      "text",
+	PRIORITY:  "priority",
+	DURATION:  "duration",
+	DONE:      "done",
 }
 
 func (self Order) String() string {
@@ -165,14 +164,14 @@ func OrderFromString(order string) (Order, bool) {
 }
 
 type taskNodeImpl struct {
-	id int
-	tasks []TaskNode
+	id     int
+	tasks  []TaskNode
 	parent TaskNode
 }
 
 func newTaskNode(id int) *taskNodeImpl {
 	return &taskNodeImpl{
-		id: id,
+		id:     id,
 		parent: nil,
 	}
 }
@@ -232,18 +231,18 @@ func (self *taskNodeImpl) Delete() {
 
 type taskImpl struct {
 	*taskNodeImpl
-	text string
-	priority Priority
+	text               string
+	priority           Priority
 	created, completed *time.Time
 }
 
 func newTask(id int, text string, priority Priority) Task {
 	return &taskImpl{
 		taskNodeImpl: newTaskNode(id),
-		text: text,
-		priority: priority,
-		created: time.UTC(),
-		completed: nil,
+		text:         text,
+		priority:     priority,
+		created:      time.UTC(),
+		completed:    nil,
 	}
 }
 
@@ -295,7 +294,7 @@ type taskListImpl struct {
 func NewTaskList() TaskList {
 	return &taskListImpl{
 		taskNodeImpl: newTaskNode(-1),
-		title: "",
+		title:        "",
 	}
 }
 

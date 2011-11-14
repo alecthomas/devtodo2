@@ -46,10 +46,10 @@ var orderFlag = goopt.String([]string{"--order"}, "priority", "specify display o
 func doView(tasks TaskList) {
 	order, reversed := OrderFromString(*orderFlag)
 	options := &ViewOptions{
-		ShowAll: *allFlag,
+		ShowAll:   *allFlag,
 		Summarise: *summaryFlag,
-		Order: order,
-		Reversed: reversed,
+		Order:     order,
+		Reversed:  reversed,
 	}
 	view := NewConsoleView()
 	view.ShowTree(tasks, options)
@@ -199,13 +199,17 @@ func expandRange(indexRange string) []string {
 		return nil
 	}
 	startIndex := strings.Split(ranges[0], ".")
-	start, err := strconv.Atoi(startIndex[len(startIndex) - 1])
-	if err != nil { return nil }
+	start, err := strconv.Atoi(startIndex[len(startIndex)-1])
+	if err != nil {
+		return nil
+	}
 	end, err := strconv.Atoi(ranges[1])
-	if err != nil { return nil }
+	if err != nil {
+		return nil
+	}
 	rangeIndexes := make([]string, 0)
 	for i := start; i <= end; i++ {
-		index := startIndex[:len(startIndex) - 1]
+		index := startIndex[:len(startIndex)-1]
 		index = append(index, fmt.Sprintf("%d", i))
 		rangeIndexes = append(rangeIndexes, strings.Join(index, "."))
 	}
@@ -238,7 +242,7 @@ func resolveTaskReferences(tasks TaskList, indices []string) []Task {
 	return references
 }
 
-func loadTaskList() (tasks TaskList, err os.Error) {
+func loadTaskList() (tasks TaskList, err error) {
 	// Try loading new-style task file
 	if file, err := os.Open(*fileFlag); err == nil {
 		defer file.Close()
@@ -258,9 +262,9 @@ func saveTaskList(tasks TaskList) {
 	path := *fileFlag
 	previous := path + "~"
 	temp := path + "~~"
-	var serializeError os.Error = nil
+	var serializeError error = nil
 	if file, err := os.Create(temp); err == nil {
-		defer func () {
+		defer func() {
 			if err = file.Close(); err != nil {
 				os.Remove(temp)
 			} else {
@@ -279,7 +283,7 @@ func saveTaskList(tasks TaskList) {
 		}()
 		writer := NewJsonIO()
 		if serializeError = writer.Serialize(file, tasks); serializeError != nil {
-			fatal(serializeError.String())
+			fatal(serializeError.Error())
 		}
 	}
 }
@@ -313,9 +317,9 @@ todo2 [-p <priority>] -e <task> [<text>]
   Edit an existing task.`
 	}
 	goopt.Summary = "DevTodo2 - a hierarchical command-line task manager"
-	goopt.Usage = func () string {
+	goopt.Usage = func() string {
 		return fmt.Sprintf("usage: %s [<options>] ...\n\n%s\n\n%s",
-						   os.Args[0], goopt.Summary, goopt.Help())
+			os.Args[0], goopt.Summary, goopt.Help())
 	}
 	goopt.Parse(nil)
 
