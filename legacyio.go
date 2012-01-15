@@ -55,11 +55,11 @@ func parseXmlNote(parent TaskNode, from []xmlNote) {
 
 		task := parent.Create(text, priority)
 
-		created, _ := strconv.Atoi64(note.Time)
-		completed, _ := strconv.Atoi64(note.Done)
-		task.SetCreationTime(time.SecondsToUTC(created))
+		created, _ := strconv.ParseInt(note.Time, 10, 64)
+		completed, _ := strconv.ParseInt(note.Done, 10, 64)
+		task.SetCreationTime(time.Unix(created, 0).UTC())
 		if completed != 0 {
-			task.SetCompletionTime(time.SecondsToUTC(completed))
+			task.SetCompletionTime(time.Unix(completed, 0).UTC())
 		}
 		parseXmlNote(task, note.Note)
 	}

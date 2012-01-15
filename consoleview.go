@@ -75,12 +75,11 @@ func getTerminalWidth() int {
 	return int(ws.ws_col)
 }
 
-
 func taskState(task Task) int {
 	if task.Len() != 0 {
 		return '+'
 	}
-	if task.CompletionTime() != nil {
+	if !task.CompletionTime().IsZero() {
 		return '-'
 	}
 	return ' '
@@ -118,7 +117,7 @@ func formatTask(width, depth int, task Task, options *ViewOptions) {
 	trimmed := false
 	if options.Summarise {
 		if len(text) > width {
-			text = strings.TrimSpace(text[:width - 1])
+			text = strings.TrimSpace(text[:width-1])
 			trimmed = true
 		}
 	}
@@ -131,7 +130,7 @@ func formatTask(width, depth int, task Task, options *ViewOptions) {
 }
 
 func consoleDisplayTask(width, depth int, task Task, options *ViewOptions) {
-	if depth >= 0 && (!options.ShowAll && task.CompletionTime() != nil) {
+	if depth >= 0 && (!options.ShowAll && !task.CompletionTime().IsZero()) {
 		return
 	}
 	if depth >= 0 {
@@ -145,7 +144,7 @@ func consoleDisplayTask(width, depth int, task Task, options *ViewOptions) {
 	}
 }
 
-type ConsoleView struct {}
+type ConsoleView struct{}
 
 func NewConsoleView() *ConsoleView {
 	return &ConsoleView{}
