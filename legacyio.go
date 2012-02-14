@@ -71,7 +71,7 @@ func NewLegacyIO() TaskListIO {
 
 func (self *legacyIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
 	todoXml := &xmlTodo{}
-	if err = xml.Unmarshal(reader, &todoXml); err != nil {
+	if err = xml.NewDecoder(reader).Decode(&todoXml); err != nil {
 		return
 	}
 
