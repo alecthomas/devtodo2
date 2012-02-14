@@ -18,13 +18,14 @@ package main
 
 import (
 	"sort"
+	"time"
 )
 
 type ViewOptions struct {
-	Order Order
-	Reversed bool
+	Order     Order
+	Reversed  bool
 	Summarise bool
-	ShowAll bool
+	ShowAll   bool
 }
 
 type View interface {
@@ -34,13 +35,13 @@ type View interface {
 
 // A filtered, ordered view of a Tasks children.
 type TaskView struct {
-	tasks []Task
+	tasks   []Task
 	options *ViewOptions
 }
 
 func CreateTaskView(node TaskNode, options *ViewOptions) *TaskView {
 	view := &TaskView{
-		tasks: make([]Task, node.Len()),
+		tasks:   make([]Task, node.Len()),
 		options: options,
 	}
 	for i := 0; i < node.Len(); i++ {
@@ -64,30 +65,30 @@ func (self *TaskView) Less(i, j int) bool {
 	less := false
 	switch self.options.Order {
 	case CREATED:
-		less = left.CreationTime().Seconds() < right.CreationTime().Seconds()
+		less = left.CreationTime().Before(right.CreationTime())
 	case COMPLETED:
-		less = left.CompletionTime().Seconds() < right.CompletionTime().Seconds()
+		less = left.CompletionTime().Before(right.CompletionTime())
 	case TEXT:
 		less = left.Text() < right.Text()
 	case PRIORITY:
 		less = left.Priority() < right.Priority()
 	case DURATION:
-		var leftDuration, rightDuration int64
+		var leftDuration, rightDuration time.Duration
 		leftCompletion := left.CompletionTime()
 		rightCompletion := right.CompletionTime()
-		if leftCompletion != nil {
-			leftDuration = leftCompletion.Seconds() - left.CreationTime().Seconds()
+		if !leftCompletion.IsZero() {
+			leftDuration = leftCompletion.Sub(left.CreationTime())
 		} else {
 			leftDuration = 0
 		}
-		if rightCompletion != nil {
-			rightDuration = rightCompletion.Seconds() - right.CreationTime().Seconds()
+		if !rightCompletion.IsZero() {
+			rightDuration = rightCompletion.Sub(right.CreationTime())
 		} else {
 			rightDuration = 0
 		}
 		less = leftDuration < rightDuration
 	case DONE:
-		less = left.CompletionTime() != nil && right.CompletionTime() == nil
+		less = !left.CompletionTime().IsZero() && right.CompletionTime().IsZero()
 	default:
 		panic("invalid ordering")
 	}
@@ -100,5 +101,3 @@ func (self *TaskView) Less(i, j int) bool {
 func (self *TaskView) Swap(i, j int) {
 	self.tasks[j], self.tasks[i] = self.tasks[i], self.tasks[j]
 }
-
-

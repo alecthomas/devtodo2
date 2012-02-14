@@ -72,12 +72,12 @@ type Task interface {
 	Priority() Priority
 	SetPriority(priority Priority)
 
-	SetCreationTime(time *time.Time)
-	CreationTime() *time.Time
+	SetCreationTime(time time.Time)
+	CreationTime() time.Time
 
 	SetCompleted()
-	SetCompletionTime(time *time.Time)
-	CompletionTime() *time.Time
+	SetCompletionTime(time time.Time)
+	CompletionTime() time.Time
 }
 
 type TaskList interface {
@@ -233,7 +233,7 @@ type taskImpl struct {
 	*taskNodeImpl
 	text               string
 	priority           Priority
-	created, completed *time.Time
+	created, completed time.Time
 }
 
 func newTask(id int, text string, priority Priority) Task {
@@ -241,8 +241,8 @@ func newTask(id int, text string, priority Priority) Task {
 		taskNodeImpl: newTaskNode(id),
 		text:         text,
 		priority:     priority,
-		created:      time.UTC(),
-		completed:    nil,
+		created:      time.Now().UTC(),
+		completed:    time.Time{},
 	}
 }
 
@@ -250,23 +250,23 @@ func (self *taskImpl) Id() int {
 	return self.id
 }
 
-func (self *taskImpl) SetCreationTime(time *time.Time) {
+func (self *taskImpl) SetCreationTime(time time.Time) {
 	self.created = time
 }
 
-func (self *taskImpl) CreationTime() *time.Time {
+func (self *taskImpl) CreationTime() time.Time {
 	return self.created
 }
 
 func (self *taskImpl) SetCompleted() {
-	self.SetCompletionTime(time.UTC())
+	self.SetCompletionTime(time.Now().UTC())
 }
 
-func (self *taskImpl) SetCompletionTime(time *time.Time) {
+func (self *taskImpl) SetCompletionTime(time time.Time) {
 	self.completed = time
 }
 
-func (self *taskImpl) CompletionTime() *time.Time {
+func (self *taskImpl) CompletionTime() time.Time {
 	return self.completed
 }
 
