@@ -72,12 +72,15 @@ type Task interface {
 	Priority() Priority
 	SetPriority(priority Priority)
 
-	SetCreationTime(time *time.Time)
-	CreationTime() *time.Time
+	SetCreationTime(time time.Time)
+	CreationTime() time.Time
 
 	SetCompleted()
-	SetCompletionTime(time *time.Time)
-	CompletionTime() *time.Time
+	SetCompletionTime(time time.Time)
+	CompletionTime() time.Time
+
+	// Extra attributes usable by extensions
+	Attributes() map[string]string
 }
 
 type TaskList interface {
@@ -164,15 +167,17 @@ func OrderFromString(order string) (Order, bool) {
 }
 
 type taskNodeImpl struct {
-	id     int
-	tasks  []TaskNode
-	parent TaskNode
+	id         int
+	tasks      []TaskNode
+	parent     TaskNode
+	attributes map[string]string
 }
 
 func newTaskNode(id int) *taskNodeImpl {
 	return &taskNodeImpl{
-		id:     id,
-		parent: nil,
+		id:         id,
+		parent:     nil,
+		attributes: make(map[string]string),
 	}
 }
 
@@ -233,7 +238,7 @@ type taskImpl struct {
 	*taskNodeImpl
 	text               string
 	priority           Priority
-	created, completed *time.Time
+	created, completed time.Time
 }
 
 func newTask(id int, text string, priority Priority) Task {
@@ -241,8 +246,8 @@ func newTask(id int, text string, priority Priority) Task {
 		taskNodeImpl: newTaskNode(id),
 		text:         text,
 		priority:     priority,
-		created:      time.UTC(),
-		completed:    nil,
+		created:      time.Now().UTC(),
+		completed:    time.Time{},
 	}
 }
 
@@ -250,23 +255,23 @@ func (self *taskImpl) Id() int {
 	return self.id
 }
 
-func (self *taskImpl) SetCreationTime(time *time.Time) {
+func (self *taskImpl) SetCreationTime(time time.Time) {
 	self.created = time
 }
 
-func (self *taskImpl) CreationTime() *time.Time {
+func (self *taskImpl) CreationTime() time.Time {
 	return self.created
 }
 
 func (self *taskImpl) SetCompleted() {
-	self.SetCompletionTime(time.UTC())
+	self.SetCompletionTime(time.Now().UTC())
 }
 
-func (self *taskImpl) SetCompletionTime(time *time.Time) {
+func (self *taskImpl) SetCompletionTime(time time.Time) {
 	self.completed = time
 }
 
-func (self *taskImpl) CompletionTime() *time.Time {
+func (self *taskImpl) CompletionTime() time.Time {
 	return self.completed
 }
 
@@ -284,6 +289,10 @@ func (self *taskImpl) Priority() Priority {
 
 func (self *taskImpl) SetPriority(priority Priority) {
 	self.priority = priority
+}
+
+func (self *taskImpl) Attributes() map[string]string {
+	return self.attributes
 }
 
 type taskListImpl struct {
