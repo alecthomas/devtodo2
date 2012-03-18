@@ -26,7 +26,7 @@ func TestFind(t *testing.T) {
 	b := tasks.Create("do B", MEDIUM)
 	b.Create("do C", MEDIUM)
 	b.Create("do D", MEDIUM)
-	
+
 	task := tasks.Find("2.2")
 	if task == nil || task.Text() != "do D" {
 		t.Fail()

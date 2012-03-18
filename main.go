@@ -22,6 +22,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Actions
@@ -34,6 +35,7 @@ var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task 
 var titleFlag = goopt.Flag([]string{"--title"}, nil, "set the task list title", "")
 var versionFlag = goopt.Flag([]string{"--version"}, nil, "show version", "")
 var infoFlag = goopt.Flag([]string{"-i", "--info"}, nil, "show information on a task", "")
+
 // Options
 var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
 var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
@@ -79,7 +81,7 @@ func doMarkDone(tasks TaskList, references []Task) {
 
 func doMarkNotDone(tasks TaskList, references []Task) {
 	for _, task := range references {
-		task.SetCompletionTime(nil)
+		task.SetCompletionTime(time.Time{})
 	}
 	saveTaskList(tasks)
 }
