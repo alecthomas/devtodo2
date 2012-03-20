@@ -169,6 +169,10 @@ func (self *ConsoleView) ShowTaskInfo(task Task) {
 	printWrappedText(task.Text(), width, 0)
 	fmt.Printf("%s\n\n", RESET)
 	fmt.Printf("%sPriority%s %s%s%s\n", BRIGHT, RESET, colourPriorityMap[task.Priority()], task.Priority().String(), RESET)
-	fmt.Printf("%sCreated:%s %s\n", BRIGHT, RESET, task.CreationTime().String())
-	fmt.Printf("%sCompleted:%s %s\n", BRIGHT, RESET, task.CompletionTime().String())
+	fmt.Printf("%sCreated:%s %s\n", BRIGHT, RESET, task.CreationTime().Local().String())
+	completed := "incomplete"
+	if !task.CompletionTime().IsZero() {
+		completed = task.CompletionTime().String()
+	}
+	fmt.Printf("%sCompleted:%s %s\n", BRIGHT, RESET, completed)
 }
