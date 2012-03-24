@@ -35,6 +35,7 @@ var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task 
 var titleFlag = goopt.Flag([]string{"--title"}, nil, "set the task list title", "")
 var versionFlag = goopt.Flag([]string{"--version"}, nil, "show version", "")
 var infoFlag = goopt.Flag([]string{"-i", "--info"}, nil, "show information on a task", "")
+var importFlag = goopt.Flag([]string{"--import"}, nil, "import and synchronise TODO items from source code", "")
 
 // Options
 var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
@@ -159,6 +160,11 @@ func processAction(tasks TaskList) {
 			fatal("expected <task> for info")
 		}
 		doShowInfo(tasks, goopt.Args[0])
+	case *importFlag:
+		if len(goopt.Args) < 1 {
+			fatal("expected list of files to import")
+		}
+		doImport(tasks, goopt.Args)
 	case *editFlag:
 		if len(goopt.Args) < 1 {
 			fatal("expected [-p <priority>] <task> [<text>]")

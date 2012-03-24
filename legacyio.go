@@ -21,7 +21,6 @@ package main
 import (
 	"encoding/xml"
 	"errors"
-
 	"io"
 	"strconv"
 	"strings"

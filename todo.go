@@ -78,6 +78,9 @@ type Task interface {
 	SetCompleted()
 	SetCompletionTime(time time.Time)
 	CompletionTime() time.Time
+
+	// Extra attributes usable by extensions
+	Attributes() map[string]string
 }
 
 type TaskList interface {
@@ -164,15 +167,17 @@ func OrderFromString(order string) (Order, bool) {
 }
 
 type taskNodeImpl struct {
-	id     int
-	tasks  []TaskNode
-	parent TaskNode
+	id         int
+	tasks      []TaskNode
+	parent     TaskNode
+	attributes map[string]string
 }
 
 func newTaskNode(id int) *taskNodeImpl {
 	return &taskNodeImpl{
-		id:     id,
-		parent: nil,
+		id:         id,
+		parent:     nil,
+		attributes: make(map[string]string),
 	}
 }
 
@@ -284,6 +289,10 @@ func (self *taskImpl) Priority() Priority {
 
 func (self *taskImpl) SetPriority(priority Priority) {
 	self.priority = priority
+}
+
+func (self *taskImpl) Attributes() map[string]string {
+	return self.attributes
 }
 
 type taskListImpl struct {

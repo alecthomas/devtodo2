@@ -10,18 +10,24 @@ For much more complete information please refer to the man page (todo2(1)).
 Installing
 ----------
 DevTodo2 is written in `Go <http://golang.org>`_. To install, you will
-need a recent version.
+need Go 1 or a release candidate.
 
-Once you have this, you should be able to simply type::
+Once you have Go installed and your ``GOPATH`` set, do the following::
 
-  $ goinstall github.com/alecthomas/devtodo2
-
-If this fails, try::
-
+  $ go get github.com/droundy/goopt
   $ git clone git://github.com/alecthomas/devtodo2.git
   $ cd devtodo2
-  $ gomake
-  $ gomake install
+  $ make install
+
+This will install to ``/usr/local`` by default, but that can be overridden by
+passing ``PREFIX=<dir>`` to ``make``.
+
+**NOTE:** You can also install with::
+
+  $ go get github.com/alecthomas/devtodo2
+
+But the binary will be named ``devtodo2`` and the man page will not be
+installed.
 
 Examples
 --------
@@ -43,8 +49,8 @@ List *all* tasks::
 
 DevTodo1?
 ---------
-Yes, this is version 2. `Version 1 <http://swapoff.org/DevTodo>`_ was written in
-C++ in 2004, and has been due for a rewrite for a very long time.
+Yes, this is version 2. `Version 1 <http://swapoff.org/devtodo1.html>`_ was written in
+C++ in 2004, and has been due for a rewrite for a *very* long time.
 
 Differences between version 1 and 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

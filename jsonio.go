@@ -76,18 +76,18 @@ func toMarshalableTask(n TaskNode) []*marshalableTask {
 	children := make([]*marshalableTask, n.Len())
 	for i := 0; i < n.Len(); i++ {
 		t := n.At(i)
-		var created, completed time.Time
+		var created, completed int64 = 0, 0
 		if !t.CreationTime().IsZero() {
-			created = t.CreationTime()
+			created = t.CreationTime().Unix()
 		}
 		if !t.CompletionTime().IsZero() {
-			completed = t.CompletionTime()
+			completed = t.CompletionTime().Unix()
 		}
 		children[i] = &marshalableTask{
 			Text:       t.Text(),
 			Priority:   t.Priority().String(),
-			Creation:   created.Unix(),
-			Completion: completed.Unix(),
+			Creation:   created,
+			Completion: completed,
 			Tasks:      toMarshalableTask(t),
 		}
 	}

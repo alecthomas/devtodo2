@@ -18,7 +18,6 @@ package main
 
 import (
 	"sort"
-	"time"
 )
 
 type ViewOptions struct {
@@ -65,30 +64,30 @@ func (self *TaskView) Less(i, j int) bool {
 	less := false
 	switch self.options.Order {
 	case CREATED:
-		less = left.CreationTime().Before(right.CreationTime())
+		less = left.CreationTime().Unix() < right.CreationTime().Unix()
 	case COMPLETED:
-		less = left.CompletionTime().Before(right.CompletionTime())
+		less = left.CompletionTime().Unix() < right.CompletionTime().Unix()
 	case TEXT:
 		less = left.Text() < right.Text()
 	case PRIORITY:
 		less = left.Priority() < right.Priority()
 	case DURATION:
-		var leftDuration, rightDuration time.Duration
+		var leftDuration, rightDuration int64
 		leftCompletion := left.CompletionTime()
 		rightCompletion := right.CompletionTime()
 		if !leftCompletion.IsZero() {
-			leftDuration = leftCompletion.Sub(left.CreationTime())
+			leftDuration = leftCompletion.Unix() - left.CreationTime().Unix()
 		} else {
 			leftDuration = 0
 		}
 		if !rightCompletion.IsZero() {
-			rightDuration = rightCompletion.Sub(right.CreationTime())
+			rightDuration = rightCompletion.Unix() - right.CreationTime().Unix()
 		} else {
 			rightDuration = 0
 		}
 		less = leftDuration < rightDuration
 	case DONE:
-		less = !left.CompletionTime().IsZero() && right.CompletionTime().IsZero()
+		less = !left.CompletionTime().IsZero() && !right.CompletionTime().IsZero()
 	default:
 		panic("invalid ordering")
 	}
