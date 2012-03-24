@@ -15,4 +15,4 @@ install: $(TARG) $(TARG).1
 	install -m644 $(TARG).1 $(PREFIX)/share/man/man1
 
 clean:
-	rm -f $(TARG)
+	rm -f $(TARG) $(TARG).1
