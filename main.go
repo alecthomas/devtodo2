@@ -254,7 +254,7 @@ func loadTaskList() (tasks TaskList, err error) {
 	// Try loading new-style task file
 	if file, err := os.Open(*fileFlag); err == nil {
 		defer file.Close()
-		loader := NewJsonIO()
+		loader := NewJSONIO()
 		return loader.Deserialize(file)
 	}
 	// Try loading legacy task file
@@ -270,7 +270,7 @@ func saveTaskList(tasks TaskList) {
 	path := *fileFlag
 	previous := path + "~"
 	temp := path + "~~"
-	var serializeError error = nil
+	var serializeError error
 	if file, err := os.Create(temp); err == nil {
 		defer func() {
 			if err = file.Close(); err != nil {
@@ -289,7 +289,7 @@ func saveTaskList(tasks TaskList) {
 				}
 			}
 		}()
-		writer := NewJsonIO()
+		writer := NewJSONIO()
 		if serializeError = writer.Serialize(file, tasks); serializeError != nil {
 			fatal(serializeError.Error())
 		}

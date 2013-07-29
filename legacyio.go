@@ -44,7 +44,7 @@ type xmlTodo struct {
 	Note  []xmlNote
 }
 
-func parseXmlNote(parent TaskNode, from []xmlNote) {
+func parseXMLNote(parent TaskNode, from []xmlNote) {
 	if from == nil {
 		return
 	}
@@ -60,7 +60,7 @@ func parseXmlNote(parent TaskNode, from []xmlNote) {
 		if completed != 0 {
 			task.SetCompletionTime(time.Unix(completed, 0).UTC())
 		}
-		parseXmlNote(task, note.Note)
+		parseXMLNote(task, note.Note)
 	}
 }
 
@@ -69,14 +69,14 @@ func NewLegacyIO() TaskListIO {
 }
 
 func (self *legacyIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
-	todoXml := &xmlTodo{}
-	if err = xml.NewDecoder(reader).Decode(&todoXml); err != nil {
+	todoXML := &xmlTodo{}
+	if err = xml.NewDecoder(reader).Decode(&todoXML); err != nil {
 		return
 	}
 
 	tasks = NewTaskList()
-	tasks.SetTitle(strings.TrimSpace(todoXml.Title))
-	parseXmlNote(tasks, todoXml.Note)
+	tasks.SetTitle(strings.TrimSpace(todoXML.Title))
+	parseXMLNote(tasks, todoXML.Note)
 	return
 }
 

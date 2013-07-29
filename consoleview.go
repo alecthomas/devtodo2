@@ -24,6 +24,7 @@ import (
 	"unsafe"
 )
 
+// ANSI color constants.
 const (
 	RESET      = "\x1b[0m"
 	BRIGHT     = "\x1b[1m"
@@ -48,13 +49,13 @@ const (
 	BGMAGENTA  = "\x1b[45m"
 	BGCYAN     = "\x1b[46m"
 	BGWHITE    = "\x1b[47m"
+
+	TITLE_COLOUR = BRIGHT + FGGREEN
+	NUMBER_COLOR = FGGREEN
 )
 
-const TITLE_COLOUR = BRIGHT + FGGREEN
-const NUMBER_COLOR = FGGREEN
-
 // Map for priority level to ANSI colour
-var colourPriorityMap map[Priority]string = map[Priority]string{
+var colourPriorityMap = map[Priority]string{
 	VERYHIGH: BRIGHT + FGRED,
 	HIGH:     BRIGHT + FGYELLOW,
 	MEDIUM:   FGWHITE,
@@ -64,15 +65,15 @@ var colourPriorityMap map[Priority]string = map[Priority]string{
 
 func getTerminalWidth() int {
 	type winsize struct {
-		ws_row, ws_col       uint16
-		ws_xpixel, ws_ypixel uint16
+		wsRow, wsCol       uint16
+		wsXPixel, wsYPixel uint16
 	}
 
 	ws := winsize{}
 	syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(0), syscall.TIOCGWINSZ,
 		uintptr(unsafe.Pointer(&ws)))
-	return int(ws.ws_col)
+	return int(ws.wsCol)
 }
 
 func taskState(task Task) int {
@@ -112,8 +113,8 @@ func formatTask(width, depth int, task Task, options *ViewOptions) {
 	width -= indent
 	state := taskState(task)
 	fmt.Printf("%s%s%c%2d.%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state,
-		task.Id()+1, RESET, colourPriorityMap[task.Priority()])
-	var text string = task.Text()
+		task.ID()+1, RESET, colourPriorityMap[task.Priority()])
+	text := task.Text()
 	trimmed := false
 	if options.Summarise {
 		if len(text) > width {

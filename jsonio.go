@@ -27,7 +27,7 @@ type jsonIO struct {
 	TaskListIO
 }
 
-func NewJsonIO() TaskListIO {
+func NewJSONIO() TaskListIO {
 	return &jsonIO{}
 }
 

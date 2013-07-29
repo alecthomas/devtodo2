@@ -25,6 +25,7 @@ import (
 
 type Priority int
 
+// Priority constants.
 const (
 	VERYLOW = Priority(iota)
 	LOW
@@ -35,6 +36,7 @@ const (
 
 type Order int
 
+// Order constants.
 const (
 	CREATED = Order(iota)
 	COMPLETED
@@ -50,7 +52,7 @@ type TaskListIO interface {
 }
 
 type TaskNode interface {
-	Id() int
+	ID() int
 	At(index int) Task
 	Len() int
 	Equal(other TaskNode) bool
@@ -97,7 +99,7 @@ type Index []int
 
 // Implementation
 
-var priorityMapFromString map[string]Priority = map[string]Priority{
+var priorityMapFromString = map[string]Priority{
 	"veryhigh": VERYHIGH,
 	"high":     HIGH,
 	"medium":   MEDIUM,
@@ -105,7 +107,7 @@ var priorityMapFromString map[string]Priority = map[string]Priority{
 	"verylow":  VERYLOW,
 }
 
-var priorityToString map[Priority]string = map[Priority]string{
+var priorityToString = map[Priority]string{
 	VERYHIGH: "veryhigh",
 	HIGH:     "high",
 	MEDIUM:   "medium",
@@ -124,7 +126,7 @@ func PriorityFromString(priority string) Priority {
 	return MEDIUM
 }
 
-var orderFromString map[string]Order = map[string]Order{
+var orderFromString = map[string]Order{
 	"started":    CREATED,
 	"start":      CREATED,
 	"creation":   CREATED,
@@ -141,7 +143,7 @@ var orderFromString map[string]Order = map[string]Order{
 	"done":       DONE,
 }
 
-var orderToString map[Order]string = map[Order]string{
+var orderToString = map[Order]string{
 	CREATED:   "created",
 	COMPLETED: "completed",
 	TEXT:      "text",
@@ -181,7 +183,7 @@ func newTaskNode(id int) *taskNodeImpl {
 	}
 }
 
-func (self *taskNodeImpl) Id() int {
+func (self *taskNodeImpl) ID() int {
 	return self.id
 }
 
@@ -251,7 +253,7 @@ func newTask(id int, text string, priority Priority) Task {
 	}
 }
 
-func (self *taskImpl) Id() int {
+func (self *taskImpl) ID() int {
 	return self.id
 }
 
@@ -321,7 +323,7 @@ func indexFromString(index string) Index {
 	return numericIndex
 }
 
-func (self *taskListImpl) Id() int {
+func (self *taskListImpl) ID() int {
 	return -1
 }
 

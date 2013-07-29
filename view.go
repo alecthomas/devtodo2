@@ -32,7 +32,7 @@ type View interface {
 	ShowTaskInfo(task Task)
 }
 
-// A filtered, ordered view of a Tasks children.
+// TaskView is a filtered, ordered view of a Tasks children.
 type TaskView struct {
 	tasks   []Task
 	options *ViewOptions
