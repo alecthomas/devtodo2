@@ -332,7 +332,7 @@ func (self *taskListImpl) Find(index string) Task {
 	if numericIndex == nil {
 		return nil
 	}
-	var node TaskNode = self
+	var node TaskNode = self // -golint
 	for _, i := range numericIndex {
 		if node = node.At(i); node == nil {
 			return nil

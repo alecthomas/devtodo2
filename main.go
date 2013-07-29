@@ -120,7 +120,7 @@ func doShowInfo(tasks TaskList, index string) {
 
 func processAction(tasks TaskList) {
 	priority := PriorityFromString(*priorityFlag)
-	var graft TaskNode = tasks
+	var graft TaskNode = tasks // -golint
 	if *graftFlag != "root" {
 		if graft = tasks.Find(*graftFlag); graft == nil {
 			fatal("invalid graft index '%s'", *graftFlag)
