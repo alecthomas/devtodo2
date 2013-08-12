@@ -20,7 +20,10 @@ Once you have Go installed and your ``GOPATH`` set, do the following::
   $ make install
 
 This will install to ``/usr/local`` by default, but that can be overridden by
-passing ``PREFIX=<dir>`` to ``make``.
+passing ``prefix=<dir>`` to ``make``. The installation directories can be
+further customized by setting ``bindir=<dir>``, ``mandir=<dir>`` and
+``man1dir=<dir>`` which default to ``$(prefix)/bin``, ``$(prefix)/share/man``
+and ``$(mandir)/man1``, respectively.
 
 **NOTE:** You can also install with::
 
