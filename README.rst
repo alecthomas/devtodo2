@@ -34,21 +34,15 @@ installed.
 
 Examples
 --------
-Add a new task::
 
-  $ todo2 -a Shopping list
-
-Add a new sub-task below task 1::
-
-  $ todo2 -ag 1 Buy soap
-
-List outstanding tasks::
-
-  $ todo2
-
-List *all* tasks::
-
-  $ todo2 -A
+=================================  ==============================
+  Task                               Command                   
+=================================  ==============================
+Add a new task                      ``todo2 -a Shopping list``
+Add a new sub-task below task 1     ``todo2 -ag 1 Buy soap``  
+List outstanding tasks              ``todo2``                 
+List *all* tasks                    ``todo2 -A``              
+=================================  ==============================
 
 DevTodo1?
 ---------
