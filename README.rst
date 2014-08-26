@@ -34,21 +34,15 @@ installed.
 
 Examples
 --------
-Add a new task::
 
-  $ todo2 -a Shopping list
-
-Add a new sub-task below task 1::
-
-  $ todo2 -ag 1 Buy soap
-
-List outstanding tasks::
-
-  $ todo2
-
-List *all* tasks::
-
-  $ todo2 -A
+=================================  ==============================
+  Task                               Command                   
+=================================  ==============================
+Add a new task                      ``todo2 -a Shopping list``
+Add a new sub-task below task 1     ``todo2 -ag 1 Buy soap``  
+List outstanding tasks              ``todo2``                 
+List *all* tasks                    ``todo2 -A``              
+=================================  ==============================
 
 DevTodo1?
 ---------
@@ -67,9 +61,9 @@ New features:
 Not currently supported:
 
 - Readline-based editing of task text and priority.
-- Filters. Completed tasks are hidden by default, but may be displayed with -A.
+- Filters. Completed tasks are hidden by default, but may be displayed with ``-A``.
 - Linked files.
-- ~/.todorc configuration file.
+- ``~/.todorc`` configuration file.
 - Colour customisation.
 - Custom task formatting.
 
