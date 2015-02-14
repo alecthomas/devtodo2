@@ -32,16 +32,16 @@ type legacyIO struct {
 }
 
 type xmlNote struct {
-	Priority string `xml:"attr"`
-	Time     string `xml:"attr"`
-	Done     string `xml:"attr"`
-	Text     string `xml:"chardata"`
-	Note     []xmlNote
+	Priority string    `xml:"priority,attr"`
+	Time     string    `xml:"time,attr"`
+	Done     string    `xml:"done,attr"`
+	Text     string    `xml:",chardata"`
+	Note     []xmlNote `xml:"note"`
 }
 
 type xmlTodo struct {
-	Title string
-	Note  []xmlNote
+	Title string    `xml:"title"`
+	Note  []xmlNote `xml:"note"`
 }
 
 func parseXMLNote(parent TaskNode, from []xmlNote) {
@@ -71,7 +71,7 @@ func NewLegacyIO() TaskListIO {
 func (self *legacyIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
 	todoXML := &xmlTodo{}
 	if err = xml.NewDecoder(reader).Decode(&todoXML); err != nil {
-		return
+		return nil, err
 	}
 
 	tasks = NewTaskList()
