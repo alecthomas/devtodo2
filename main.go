@@ -44,7 +44,7 @@ var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lis
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
 var allFlag = goopt.Flag([]string{"-A", "--all"}, nil, "show all tasks, even completed ones", "")
 var summaryFlag = goopt.Flag([]string{"-s", "--summary"}, nil, "summarise tasks to one line", "")
-var orderFlag = goopt.String([]string{"--order"}, "priority", "specify display order of tasks (created,completed,text,priority,duration,done)")
+var orderFlag = goopt.String([]string{"--order"}, "priority", "specify display order of tasks (created,completed,text,priority,duration,done,index)")
 
 func doView(tasks TaskList) {
 	order, reversed := OrderFromString(*orderFlag)

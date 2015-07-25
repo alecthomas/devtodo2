@@ -44,6 +44,7 @@ const (
 	PRIORITY
 	DURATION
 	DONE
+	INDEX
 )
 
 type TaskListIO interface {
@@ -141,6 +142,7 @@ var orderFromString = map[string]Order{
 	"lifetime":   DURATION,
 	"duration":   DURATION,
 	"done":       DONE,
+	"index":      INDEX,
 }
 
 var orderToString = map[Order]string{
@@ -150,6 +152,7 @@ var orderToString = map[Order]string{
 	PRIORITY:  "priority",
 	DURATION:  "duration",
 	DONE:      "done",
+	INDEX:     "index",
 }
 
 func (self Order) String() string {
