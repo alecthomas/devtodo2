@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	goopt "github.com/droundy/goopt"
 	"os"
@@ -122,22 +123,52 @@ func doShowInfo(tasks TaskList, index string) {
 	view.ShowTaskInfo(task)
 }
 
-func processAction(tasks TaskList) {
-	priority := PriorityFromString(*priorityFlag)
-	var graft TaskNode = tasks // -golint
-	if *graftFlag != "root" {
-		if graft = tasks.Find(*graftFlag); graft == nil {
-			fatal("invalid graft index '%s'", *graftFlag)
+func doIdleInput(task *string, priority *Priority, comment *string) {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Print("task > ")
+	scanner.Scan()
+	*task = scanner.Text()
+
+	fmt.Print("priority > ")
+	scanner.Scan()
+	*priority = PriorityFromString(scanner.Text())
+
+	fmt.Print("comment > ")
+	scanner.Scan()
+	*comment = scanner.Text()
+
+}
+
+func doGetGraft(index string, tasks TaskList, task *TaskNode) {
+	if index == "" {
+		index = "root"
+	}
+	if index != "root" {
+		if *task = tasks.Find(index); *task == nil {
+			fatal("invalid graft index '%s'", index)
 		}
 	}
+}
+
+func processAction(tasks TaskList) {
+	priority := PriorityFromString(*priorityFlag)
+	comment := *commentFlag
+	var graft TaskNode = tasks // -golint
+	doGetGraft(*graftFlag, tasks, &graft)
 
 	switch {
 	case *addFlag:
-		if len(goopt.Args) == 0 {
-			fatal("expected text for new task")
-		}
 		text := strings.Join(goopt.Args, " ")
-		comment := *commentFlag
+		if len(goopt.Args) == 0 {
+			scanner := bufio.NewScanner(os.Stdin)
+			fmt.Print("graft > ")
+			scanner.Scan()
+			doGetGraft(scanner.Text(), tasks, &graft)
+			doIdleInput(&text, &priority, &comment)
+		}
+		if strings.TrimSpace(text) == "" {
+			fatal("expected [-p <priority>] <task> [<text>]")
+		}
 		doAdd(tasks, graft, priority, text, comment)
 	case *markDoneFlag:
 		doMarkDone(tasks, resolveTaskReferences(tasks, goopt.Args))
@@ -171,18 +202,25 @@ func processAction(tasks TaskList) {
 		}
 		doImport(tasks, goopt.Args)
 	case *editFlag:
+		var text string
+		var taskIndex string
 		if len(goopt.Args) < 1 {
-			fatal("expected [-p <priority>] <task> [<text>]")
+			scanner := bufio.NewScanner(os.Stdin)
+			fmt.Print("index > ")
+			scanner.Scan()
+			taskIndex = scanner.Text()
+			doIdleInput(&text, &priority, &comment)
+		} else {
+			taskIndex = goopt.Args[0]
+			text = strings.Join(goopt.Args[1:], " ")
+			if *priorityFlag == "" {
+				priority = -1
+			}
 		}
-		task := tasks.Find(goopt.Args[0])
+		task := tasks.Find(taskIndex)
 		if task == nil {
-			fatal("invalid task %s", goopt.Args[0])
+			fatal("invalid task %s", taskIndex)
 		}
-		text := strings.Join(goopt.Args[1:], " ")
-		if *priorityFlag == "" {
-			priority = -1
-		}
-		comment := *commentFlag
 		doEditTask(tasks, task, priority, text, comment)
 	default:
 		doView(tasks)

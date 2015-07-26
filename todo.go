@@ -122,6 +122,9 @@ func (p Priority) String() string {
 }
 
 func PriorityFromString(priority string) Priority {
+	r := strings.NewReplacer(" ", "")
+	priority = r.Replace(priority)
+	priority = strings.ToLower(priority)
 	if p, ok := priorityMapFromString[priority]; ok {
 		return p
 	}
