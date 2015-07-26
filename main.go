@@ -39,6 +39,7 @@ var importFlag = goopt.Flag([]string{"--import"}, nil, "import and synchronise T
 
 // Options
 var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
+var commentFlag = goopt.String([]string{"-c", "--comment"}, "<no description>", "comment or note for the task")
 var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
 var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
@@ -58,17 +59,20 @@ func doView(tasks TaskList) {
 	view.ShowTree(tasks, options)
 }
 
-func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
-	graft.Create(text, priority)
+func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string, comment string) {
+	graft.Create(text, priority, comment)
 	saveTaskList(tasks)
 }
 
-func doEditTask(tasks TaskList, task Task, priority Priority, text string) {
+func doEditTask(tasks TaskList, task Task, priority Priority, text string, comment string) {
 	if text != "" {
 		task.SetText(text)
 	}
 	if priority != -1 {
 		task.SetPriority(priority)
+	}
+	if comment != "" {
+		task.SetComment(comment)
 	}
 	saveTaskList(tasks)
 }
@@ -133,7 +137,8 @@ func processAction(tasks TaskList) {
 			fatal("expected text for new task")
 		}
 		text := strings.Join(goopt.Args, " ")
-		doAdd(tasks, graft, priority, text)
+		comment := *commentFlag
+		doAdd(tasks, graft, priority, text, comment)
 	case *markDoneFlag:
 		doMarkDone(tasks, resolveTaskReferences(tasks, goopt.Args))
 	case *markNotDoneFlag:
@@ -177,7 +182,8 @@ func processAction(tasks TaskList) {
 		if *priorityFlag == "" {
 			priority = -1
 		}
-		doEditTask(tasks, task, priority, text)
+		comment := *commentFlag
+		doEditTask(tasks, task, priority, text, comment)
 	default:
 		doView(tasks)
 	}

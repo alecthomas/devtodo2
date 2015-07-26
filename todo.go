@@ -62,7 +62,7 @@ type TaskNode interface {
 	SetParent(parent TaskNode)
 
 	Append(child TaskNode)
-	Create(title string, priority Priority) Task
+	Create(title string, priority Priority, comment string) Task
 	Delete()
 }
 
@@ -84,6 +84,7 @@ type Task interface {
 
 	// Extra attributes usable by extensions
 	Attributes() map[string]string
+	SetComment(comment string)
 }
 
 type TaskList interface {
@@ -218,8 +219,8 @@ func (self *taskNodeImpl) Append(child TaskNode) {
 	self.tasks = append(self.tasks, child)
 }
 
-func (self *taskNodeImpl) Create(title string, priority Priority) Task {
-	task := newTask(self.Len(), title, priority)
+func (self *taskNodeImpl) Create(title string, priority Priority, comment string) Task {
+	task := newTask(self.Len(), title, priority, comment)
 	self.Append(task)
 	return task
 }
@@ -244,15 +245,17 @@ type taskImpl struct {
 	text               string
 	priority           Priority
 	created, completed time.Time
+	attributes         map[string]string
 }
 
-func newTask(id int, text string, priority Priority) Task {
+func newTask(id int, text string, priority Priority, comment string) Task {
 	return &taskImpl{
 		taskNodeImpl: newTaskNode(id),
 		text:         text,
 		priority:     priority,
 		created:      time.Now().UTC(),
 		completed:    time.Time{},
+		attributes:   map[string]string{"comment": comment},
 	}
 }
 
@@ -298,6 +301,10 @@ func (self *taskImpl) SetPriority(priority Priority) {
 
 func (self *taskImpl) Attributes() map[string]string {
 	return self.attributes
+}
+
+func (self *taskImpl) SetComment(comment string) {
+	self.attributes["comment"] = comment
 }
 
 type taskListImpl struct {

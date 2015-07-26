@@ -171,6 +171,7 @@ func (self *ConsoleView) ShowTaskInfo(task Task) {
 	fmt.Printf("%s\n\n", RESET)
 	fmt.Printf("%sPriority%s %s%s%s\n", BRIGHT, RESET, colourPriorityMap[task.Priority()], task.Priority().String(), RESET)
 	fmt.Printf("%sCreated:%s %s\n", BRIGHT, RESET, task.CreationTime().Local().String())
+	fmt.Printf("%sComment:%s %s\n", BRIGHT, RESET, task.Attributes()["comment"])
 	completed := "incomplete"
 	if !task.CompletionTime().IsZero() {
 		completed = task.CompletionTime().String()
