@@ -91,7 +91,7 @@ func (self *TaskView) Less(i, j int) bool {
 	default:
 		panic("invalid ordering")
 	}
-	if !self.options.Reversed {
+	if self.options.Reversed {
 		less = !less
 	}
 	return less
