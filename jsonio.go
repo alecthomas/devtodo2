@@ -19,7 +19,6 @@ package main
 import (
 	"encoding/json"
 	"io"
-
 	"time"
 )
 
@@ -58,6 +57,7 @@ type marshalableTask struct {
 	Creation   int64              `json:"creation"`
 	Completion int64              `json:"completion"`
 	Tasks      []*marshalableTask `json:"tasks"`
+	Comment    string             `json:"comment"`
 }
 
 type marshalableTaskList struct {
@@ -89,6 +89,7 @@ func toMarshalableTask(n TaskNode) []*marshalableTask {
 			Creation:   created,
 			Completion: completed,
 			Tasks:      toMarshalableTask(t),
+			Comment:    t.Attributes()["comment"],
 		}
 	}
 	return children
@@ -103,7 +104,7 @@ func fromMarshalableTaskList(l *marshalableTaskList) TaskList {
 
 func fromMarshalableTask(node TaskNode, t []*marshalableTask) {
 	for _, j := range t {
-		task := node.Create(j.Text, PriorityFromString(j.Priority))
+		task := node.Create(j.Text, PriorityFromString(j.Priority), j.Comment)
 		task.SetCreationTime(time.Unix(j.Creation, 0).UTC())
 		if j.Completion != 0 {
 			task.SetCompletionTime(time.Unix(j.Completion, 0).UTC())

@@ -88,6 +88,8 @@ func (self *TaskView) Less(i, j int) bool {
 		less = leftDuration < rightDuration
 	case DONE:
 		less = !left.CompletionTime().IsZero() && !right.CompletionTime().IsZero()
+	case INDEX:
+		less = left.ID() > right.ID()
 	default:
 		panic("invalid ordering")
 	}

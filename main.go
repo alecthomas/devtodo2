@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	goopt "github.com/droundy/goopt"
 	"os"
@@ -39,12 +40,13 @@ var importFlag = goopt.Flag([]string{"--import"}, nil, "import and synchronise T
 
 // Options
 var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
+var commentFlag = goopt.String([]string{"-c", "--comment"}, "<no description>", "comment or note for the task")
 var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
 var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
 var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
 var allFlag = goopt.Flag([]string{"-A", "--all"}, nil, "show all tasks, even completed ones", "")
 var summaryFlag = goopt.Flag([]string{"-s", "--summary"}, nil, "summarise tasks to one line", "")
-var orderFlag = goopt.String([]string{"--order"}, "priority", "specify display order of tasks (created,completed,text,priority,duration,done)")
+var orderFlag = goopt.String([]string{"--order"}, "priority", "specify display order of tasks (created,completed,text,priority,duration,done,index)")
 
 func doView(tasks TaskList) {
 	order, reversed := OrderFromString(*orderFlag)
@@ -58,17 +60,20 @@ func doView(tasks TaskList) {
 	view.ShowTree(tasks, options)
 }
 
-func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
-	graft.Create(text, priority)
+func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string, comment string) {
+	graft.Create(text, priority, comment)
 	saveTaskList(tasks)
 }
 
-func doEditTask(tasks TaskList, task Task, priority Priority, text string) {
+func doEditTask(tasks TaskList, task Task, priority Priority, text string, comment string) {
 	if text != "" {
 		task.SetText(text)
 	}
 	if priority != -1 {
 		task.SetPriority(priority)
+	}
+	if comment != "" {
+		task.SetComment(comment)
 	}
 	saveTaskList(tasks)
 }
@@ -118,22 +123,53 @@ func doShowInfo(tasks TaskList, index string) {
 	view.ShowTaskInfo(task)
 }
 
-func processAction(tasks TaskList) {
-	priority := PriorityFromString(*priorityFlag)
-	var graft TaskNode = tasks // -golint
-	if *graftFlag != "root" {
-		if graft = tasks.Find(*graftFlag); graft == nil {
-			fatal("invalid graft index '%s'", *graftFlag)
+func doIdleInput(task *string, priority *Priority, comment *string) {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Print("task > ")
+	scanner.Scan()
+	*task = scanner.Text()
+
+	fmt.Print("priority > ")
+	scanner.Scan()
+	*priority = PriorityFromString(scanner.Text())
+
+	fmt.Print("comment > ")
+	scanner.Scan()
+	*comment = scanner.Text()
+
+}
+
+func doGetGraft(index string, tasks TaskList, task *TaskNode) {
+	if index == "" {
+		index = "root"
+	}
+	if index != "root" {
+		if *task = tasks.Find(index); *task == nil {
+			fatal("invalid graft index '%s'", index)
 		}
 	}
+}
+
+func processAction(tasks TaskList) {
+	priority := PriorityFromString(*priorityFlag)
+	comment := *commentFlag
+	var graft TaskNode = tasks // -golint
+	doGetGraft(*graftFlag, tasks, &graft)
 
 	switch {
 	case *addFlag:
-		if len(goopt.Args) == 0 {
-			fatal("expected text for new task")
-		}
 		text := strings.Join(goopt.Args, " ")
-		doAdd(tasks, graft, priority, text)
+		if len(goopt.Args) == 0 {
+			scanner := bufio.NewScanner(os.Stdin)
+			fmt.Print("graft > ")
+			scanner.Scan()
+			doGetGraft(scanner.Text(), tasks, &graft)
+			doIdleInput(&text, &priority, &comment)
+		}
+		if strings.TrimSpace(text) == "" {
+			fatal("expected [-p <priority>] <task> [<text>]")
+		}
+		doAdd(tasks, graft, priority, text, comment)
 	case *markDoneFlag:
 		doMarkDone(tasks, resolveTaskReferences(tasks, goopt.Args))
 	case *markNotDoneFlag:
@@ -166,18 +202,26 @@ func processAction(tasks TaskList) {
 		}
 		doImport(tasks, goopt.Args)
 	case *editFlag:
+		var text string
+		var taskIndex string
 		if len(goopt.Args) < 1 {
-			fatal("expected [-p <priority>] <task> [<text>]")
+			scanner := bufio.NewScanner(os.Stdin)
+			fmt.Print("index > ")
+			scanner.Scan()
+			taskIndex = scanner.Text()
+			doIdleInput(&text, &priority, &comment)
+		} else {
+			taskIndex = goopt.Args[0]
+			text = strings.Join(goopt.Args[1:], " ")
+			if *priorityFlag == "" {
+				priority = -1
+			}
 		}
-		task := tasks.Find(goopt.Args[0])
+		task := tasks.Find(taskIndex)
 		if task == nil {
-			fatal("invalid task %s", goopt.Args[0])
+			fatal("invalid task %s", taskIndex)
 		}
-		text := strings.Join(goopt.Args[1:], " ")
-		if *priorityFlag == "" {
-			priority = -1
-		}
-		doEditTask(tasks, task, priority, text)
+		doEditTask(tasks, task, priority, text, comment)
 	default:
 		doView(tasks)
 	}

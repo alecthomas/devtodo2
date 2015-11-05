@@ -60,7 +60,6 @@ New features:
 
 Not currently supported:
 
-- Readline-based editing of task text and priority.
 - Filters. Completed tasks are hidden by default, but may be displayed with ``-A``.
 - Linked files.
 - ``~/.todorc`` configuration file.

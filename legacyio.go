@@ -51,8 +51,9 @@ func parseXMLNote(parent TaskNode, from []xmlNote) {
 	for _, note := range from {
 		text := strings.TrimSpace(note.Text)
 		priority := PriorityFromString(note.Priority)
+		comment := ""
 
-		task := parent.Create(text, priority)
+		task := parent.Create(text, priority, comment)
 
 		created, _ := strconv.ParseInt(note.Time, 10, 64)
 		completed, _ := strconv.ParseInt(note.Done, 10, 64)
