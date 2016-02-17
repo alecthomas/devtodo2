@@ -18,33 +18,63 @@ package main
 
 import (
 	"fmt"
-	goopt "github.com/droundy/goopt"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
+const usage = `DevTodo2 - a hierarchical command-line task manager
+
+DevTodo is a program aimed specifically at programmers (but usable by anybody
+at the terminal) to aid in day-to-day development.
+
+It maintains a list of items that have yet to be completed, one list for each
+project directory. This allows the programmer to track outstanding bugs or
+items that need to be completed with very little effort.
+
+Items can be prioritised and are displayed in a hierarchy, so that one item may
+depend on another.
+
+
+  todo2 [-A]
+    Display (all) tasks.
+
+  todo2 [-p <priority>] -a <text>
+    Create a new task.
+
+  todo2 -d <index>
+    Mark a task as complete.
+
+  todo2 [-p <priority>] -e <task> [<text>]
+    Edit an existing task.
+`
+
 // Actions
-var addFlag = goopt.Flag([]string{"-a", "--add"}, nil, "add a task", "")
-var editFlag = goopt.Flag([]string{"-e", "--edit"}, nil, "edit a task, replacing its text", "")
-var markDoneFlag = goopt.Flag([]string{"-d", "--done"}, nil, "mark the given tasks as done", "")
-var markNotDoneFlag = goopt.Flag([]string{"-D", "--not-done"}, nil, "mark the given tasks as not done", "")
-var removeFlag = goopt.Flag([]string{"--remove"}, nil, "remove the given tasks", "")
-var reparentFlag = goopt.Flag([]string{"-R", "--reparent"}, nil, "reparent task A below task B", "")
-var titleFlag = goopt.Flag([]string{"--title"}, nil, "set the task list title", "")
-var versionFlag = goopt.Flag([]string{"--version"}, nil, "show version", "")
-var infoFlag = goopt.Flag([]string{"-i", "--info"}, nil, "show information on a task", "")
-var importFlag = goopt.Flag([]string{"--import"}, nil, "import and synchronise TODO items from source code", "")
+var addFlag = kingpin.Flag("add", "Add a task.").Short('a').Bool()
+var editFlag = kingpin.Flag("edit", "Edit a task, replacing its text.").Short('e').Bool()
+var markDoneFlag = kingpin.Flag("done", "Mark the given tasks as done.").Short('d').Bool()
+var markNotDoneFlag = kingpin.Flag("not-done", "Mark the given tasks as not done.").Short('D').Bool()
+var removeFlag = kingpin.Flag("remove", "Remove the given tasks.").Bool()
+var reparentFlag = kingpin.Flag("reparent", "Reparent task A below task B").Bool()
+var titleFlag = kingpin.Flag("title", "Set the task list title.").Bool()
+var infoFlag = kingpin.Flag("info", "Show information on a task.").Bool()
+var importFlag = kingpin.Flag("import", "Import and synchronise TODO items from source code.").Bool()
+var purgeFlag = kingpin.Flag("purge", "Purge completed tasks older than this.").Default("-1s").PlaceHolder("0s").Duration()
 
 // Options
-var priorityFlag = goopt.String([]string{"-p", "--priority"}, "medium", "priority of newly created tasks (veryhigh,high,medium,low,verylow)")
-var graftFlag = goopt.String([]string{"-g", "--graft"}, "root", "task to graft new tasks to")
-var fileFlag = goopt.String([]string{"--file"}, ".todo2", "file to load task lists from")
-var legacyFileFlag = goopt.String([]string{"--legacy-file"}, ".todo", "file to load legacy task lists from")
-var allFlag = goopt.Flag([]string{"-A", "--all"}, nil, "show all tasks, even completed ones", "")
-var summaryFlag = goopt.Flag([]string{"-s", "--summary"}, nil, "summarise tasks to one line", "")
-var orderFlag = goopt.String([]string{"--order"}, "priority", "specify display order of tasks (created,completed,text,priority,duration,done)")
+var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').Default("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
+var graftFlag = kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").String()
+var fileFlag = kingpin.Flag("file", "Flie to load task lists from.").Default(".todo2").String()
+var legacyFileFlag = kingpin.Flag("legacy-file", "File to load legacy task lists from.").Default(".todo").String()
+var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
+var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short('s').Bool()
+var orderFlag = kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done)").Default("priority").Enum("index", "created", "completed", "text", "priority", "duration", "done")
+
+// Task text.
+var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
 
 func doView(tasks TaskList) {
 	order, reversed := OrderFromString(*orderFlag)
@@ -99,14 +129,21 @@ func doRemove(tasks TaskList, references []Task) {
 	saveTaskList(tasks)
 }
 
+func doPurge(tasks TaskList, age time.Duration) {
+	cutoff := time.Now().Add(-age)
+	matches := tasks.FindAll(func(task Task) bool {
+		return !task.CompletionTime().IsZero() && task.CompletionTime().Before(cutoff)
+	})
+	for _, m := range matches {
+		m.Delete()
+	}
+	saveTaskList(tasks)
+}
+
 func doSetTitle(tasks TaskList, args []string) {
 	title := strings.Join(args, " ")
 	tasks.SetTitle(title)
 	saveTaskList(tasks)
-}
-
-func doShowVersion() {
-	println(goopt.Version)
 }
 
 func doShowInfo(tasks TaskList, index string) {
@@ -129,55 +166,55 @@ func processAction(tasks TaskList) {
 
 	switch {
 	case *addFlag:
-		if len(goopt.Args) == 0 {
+		if len(*taskText) == 0 {
 			fatalf("expected text for new task")
 		}
-		text := strings.Join(goopt.Args, " ")
+		text := strings.Join(*taskText, " ")
 		doAdd(tasks, graft, priority, text)
 	case *markDoneFlag:
-		doMarkDone(tasks, resolveTaskReferences(tasks, goopt.Args))
+		doMarkDone(tasks, resolveTaskReferences(tasks, *taskText))
 	case *markNotDoneFlag:
-		doMarkNotDone(tasks, resolveTaskReferences(tasks, goopt.Args))
+		doMarkNotDone(tasks, resolveTaskReferences(tasks, *taskText))
 	case *removeFlag:
-		doRemove(tasks, resolveTaskReferences(tasks, goopt.Args))
+		doRemove(tasks, resolveTaskReferences(tasks, *taskText))
 	case *reparentFlag:
-		if len(goopt.Args) < 1 {
+		if len(*taskText) < 1 {
 			fatalf("expected <task> [<new-parent>] for reparenting")
 		}
 		var below TaskNode
-		if len(goopt.Args) == 2 {
-			below = resolveTaskReference(tasks, goopt.Args[1])
+		if len(*taskText) == 2 {
+			below = resolveTaskReference(tasks, (*taskText)[1])
 		} else {
 			below = tasks
 		}
-		doReparent(tasks, resolveTaskReference(tasks, goopt.Args[0]), below)
+		doReparent(tasks, resolveTaskReference(tasks, (*taskText)[0]), below)
 	case *titleFlag:
-		doSetTitle(tasks, goopt.Args)
-	case *versionFlag:
-		doShowVersion()
+		doSetTitle(tasks, *taskText)
 	case *infoFlag:
-		if len(goopt.Args) < 1 {
+		if len(*taskText) < 1 {
 			fatalf("expected <task> for info")
 		}
-		doShowInfo(tasks, goopt.Args[0])
+		doShowInfo(tasks, (*taskText)[0])
 	case *importFlag:
-		if len(goopt.Args) < 1 {
+		if len(*taskText) < 1 {
 			fatalf("expected list of files to import")
 		}
-		doImport(tasks, goopt.Args)
+		doImport(tasks, *taskText)
 	case *editFlag:
-		if len(goopt.Args) < 1 {
+		if len(*taskText) < 1 {
 			fatalf("expected [-p <priority>] <task> [<text>]")
 		}
-		task := tasks.Find(goopt.Args[0])
+		task := tasks.Find((*taskText)[0])
 		if task == nil {
-			fatalf("invalid task %s", goopt.Args[0])
+			fatalf("invalid task %s", (*taskText)[0])
 		}
-		text := strings.Join(goopt.Args[1:], " ")
+		text := strings.Join(*taskText, " ")
 		if *priorityFlag == "" {
 			priority = -1
 		}
 		doEditTask(tasks, task, priority, text)
+	case *purgeFlag != -1*time.Second:
+		doPurge(tasks, *purgeFlag)
 	default:
 		doView(tasks)
 	}
@@ -215,7 +252,7 @@ func expandRange(indexRange string) []string {
 	if err != nil {
 		return nil
 	}
-	rangeIndexes := make([]string, 0)
+	rangeIndexes := []string{}
 	for i := start; i <= end; i++ {
 		index := startIndex[:len(startIndex)-1]
 		index = append(index, fmt.Sprintf("%d", i))
@@ -279,7 +316,7 @@ func saveTaskList(tasks TaskList) {
 				if serializeError != nil {
 					return
 				}
-				if _, err := os.Stat(path); err == nil {
+				if _, err = os.Stat(path); err == nil {
 					if err = os.Rename(path, previous); err != nil {
 						fatalf("unable to rename %s to %s", path, previous)
 					}
@@ -297,39 +334,9 @@ func saveTaskList(tasks TaskList) {
 }
 
 func main() {
-	goopt.Suite = "DevTodo2"
-	goopt.Version = "2.1"
-	goopt.Author = "Alec Thomas <alec@swapoff.org>"
-	goopt.Description = func() string {
-		return `DevTodo is a program aimed specifically at programmers (but usable by anybody
-at the terminal) to aid in day-to-day development.
-
-It maintains a list of items that have yet to be completed, one list for each
-project directory. This allows the programmer to track outstanding bugs or
-items that need to be completed with very little effort.
-
-Items can be prioritised and are displayed in a hierarchy, so that one item may
-depend on another.
-
-
-todo2 [-A]
-  Display (all) tasks.
-
-todo2 [-p <priority>] -a <text>
-  Create a new task.
-
-todo2 -d <index>
-  Mark a task as complete.
-
-todo2 [-p <priority>] -e <task> [<text>]
-  Edit an existing task.`
-	}
-	goopt.Summary = "DevTodo2 - a hierarchical command-line task manager"
-	goopt.Usage = func() string {
-		return fmt.Sprintf("usage: %s [<options>] ...\n\n%s\n\n%s",
-			os.Args[0], goopt.Summary, goopt.Help())
-	}
-	goopt.Parse(nil)
+	kingpin.CommandLine.Help = usage
+	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
+	kingpin.Parse()
 
 	tasks, err := loadTaskList()
 	if err != nil {

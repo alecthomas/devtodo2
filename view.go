@@ -50,19 +50,21 @@ func CreateTaskView(node TaskNode, options *ViewOptions) *TaskView {
 	return view
 }
 
-func (self *TaskView) At(i int) Task {
-	return self.tasks[i]
+func (t *TaskView) At(i int) Task {
+	return t.tasks[i]
 }
 
-func (self *TaskView) Len() int {
-	return len(self.tasks)
+func (t *TaskView) Len() int {
+	return len(t.tasks)
 }
 
-func (self *TaskView) Less(i, j int) bool {
-	left := self.tasks[i]
-	right := self.tasks[j]
+func (t *TaskView) Less(i, j int) bool {
+	left := t.tasks[i]
+	right := t.tasks[j]
 	less := false
-	switch self.options.Order {
+	switch t.options.Order {
+	case INDEX:
+		less = left.ID() < right.ID()
 	case CREATED:
 		less = left.CreationTime().Unix() < right.CreationTime().Unix()
 	case COMPLETED:
@@ -91,12 +93,12 @@ func (self *TaskView) Less(i, j int) bool {
 	default:
 		panic("invalid ordering")
 	}
-	if self.options.Reversed {
+	if t.options.Reversed {
 		less = !less
 	}
 	return less
 }
 
-func (self *TaskView) Swap(i, j int) {
-	self.tasks[j], self.tasks[i] = self.tasks[i], self.tasks[j]
+func (t *TaskView) Swap(i, j int) {
+	t.tasks[j], t.tasks[i] = t.tasks[i], t.tasks[j]
 }

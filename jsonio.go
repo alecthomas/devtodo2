@@ -31,7 +31,7 @@ func NewJSONIO() TaskListIO {
 	return &jsonIO{}
 }
 
-func (self *jsonIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
+func (j *jsonIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
 	decoder := json.NewDecoder(reader)
 	mtl := &marshalableTaskList{}
 	if err = decoder.Decode(&mtl); err == nil {
@@ -40,7 +40,7 @@ func (self *jsonIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
 	return
 }
 
-func (self *jsonIO) Serialize(writer io.Writer, tasks TaskList) (err error) {
+func (j *jsonIO) Serialize(writer io.Writer, tasks TaskList) (err error) {
 	translated := toMarshalableTaskList(tasks)
 	data, err := json.MarshalIndent(translated, "", "  ")
 	if err != nil {
@@ -56,8 +56,8 @@ type marshalableTask struct {
 	Text       string             `json:"text"`
 	Priority   string             `json:"priority"`
 	Creation   int64              `json:"creation"`
-	Completion int64              `json:"completion"`
-	Tasks      []*marshalableTask `json:"tasks"`
+	Completion int64              `json:"completion,omitempty"`
+	Tasks      []*marshalableTask `json:"tasks,omitempty"`
 }
 
 type marshalableTaskList struct {

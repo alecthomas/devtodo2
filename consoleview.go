@@ -103,7 +103,7 @@ func printWrappedText(text string, width, subsequentIndent int) {
 		offset += len(token)
 		if offset < width && i != len(tokens)-1 {
 			fmt.Print(" ")
-			offset += 1
+			offset++
 		}
 	}
 }
@@ -151,7 +151,7 @@ func NewConsoleView() *ConsoleView {
 	return &ConsoleView{}
 }
 
-func (self *ConsoleView) ShowTree(tasks TaskList, options *ViewOptions) {
+func (c *ConsoleView) ShowTree(tasks TaskList, options *ViewOptions) {
 	width := getTerminalWidth()
 	if tasks.Title() != "" {
 		fmt.Print(TITLE_COLOUR)
@@ -164,7 +164,7 @@ func (self *ConsoleView) ShowTree(tasks TaskList, options *ViewOptions) {
 	}
 }
 
-func (self *ConsoleView) ShowTaskInfo(task Task) {
+func (c *ConsoleView) ShowTaskInfo(task Task) {
 	width := getTerminalWidth()
 	fmt.Print(colourPriorityMap[task.Priority()])
 	printWrappedText(task.Text(), width, 0)

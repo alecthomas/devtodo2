@@ -2,18 +2,14 @@
   "title": "DevTodo2 - a hierarchical command-line task manager",
   "tasks": [
     {
-      "text": "Add support for syncing tasks with TODO entries in source.",
-      "priority": "low",
-      "creation": 1332544798,
-      "completion": 0,
-      "tasks": []
-    },
-    {
       "text": "Add back readline support.",
       "priority": "high",
-      "creation": 1332545020,
-      "completion": 0,
-      "tasks": []
+      "creation": 1332545020
+    },
+    {
+      "text": "Add support for syncing tasks with TODO entries in source.",
+      "priority": "low",
+      "creation": 1332544798
     }
   ]
 }

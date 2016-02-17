@@ -44,6 +44,7 @@ const (
 	PRIORITY
 	DURATION
 	DONE
+	INDEX
 )
 
 type TaskListIO interface {
@@ -92,6 +93,7 @@ type TaskList interface {
 	SetTitle(title string)
 
 	Find(index string) Task
+	FindAll(predicate func(node Task) bool) []Task
 }
 
 // Index referencing a task
@@ -127,6 +129,7 @@ func PriorityFromString(priority string) Priority {
 }
 
 var orderFromString = map[string]Order{
+	"index":      INDEX,
 	"started":    CREATED,
 	"start":      CREATED,
 	"creation":   CREATED,
@@ -144,6 +147,7 @@ var orderFromString = map[string]Order{
 }
 
 var orderToString = map[Order]string{
+	INDEX:     "index",
 	CREATED:   "created",
 	COMPLETED: "completed",
 	TEXT:      "text",
@@ -152,8 +156,8 @@ var orderToString = map[Order]string{
 	DONE:      "done",
 }
 
-func (self Order) String() string {
-	return orderToString[self]
+func (t Order) String() string {
+	return orderToString[t]
 }
 
 func OrderFromString(order string) (Order, bool) {
@@ -183,57 +187,57 @@ func newTaskNode(id int) *taskNodeImpl {
 	}
 }
 
-func (self *taskNodeImpl) ID() int {
-	return self.id
+func (t *taskNodeImpl) ID() int {
+	return t.id
 }
 
-func (self *taskNodeImpl) Equal(other TaskNode) bool {
-	return self == other
+func (t *taskNodeImpl) Equal(other TaskNode) bool {
+	return t == other
 }
 
-func (self *taskNodeImpl) Len() int {
-	return len(self.tasks)
+func (t *taskNodeImpl) Len() int {
+	return len(t.tasks)
 }
 
-func (self *taskNodeImpl) At(index int) Task {
-	if index >= len(self.tasks) {
+func (t *taskNodeImpl) At(index int) Task {
+	if index >= len(t.tasks) {
 		return nil
 	}
-	return self.tasks[index].(Task)
+	return t.tasks[index].(Task)
 }
 
-func (self *taskNodeImpl) Parent() TaskNode {
-	return self.parent
+func (t *taskNodeImpl) Parent() TaskNode {
+	return t.parent
 }
 
-func (self *taskNodeImpl) SetParent(parent TaskNode) {
-	self.parent = parent
+func (t *taskNodeImpl) SetParent(parent TaskNode) {
+	t.parent = parent
 }
 
-func (self *taskNodeImpl) Append(child TaskNode) {
-	child.SetParent(self)
-	self.tasks = append(self.tasks, child)
+func (t *taskNodeImpl) Append(child TaskNode) {
+	child.SetParent(t)
+	t.tasks = append(t.tasks, child)
 }
 
-func (self *taskNodeImpl) Create(title string, priority Priority) Task {
-	task := newTask(self.Len(), title, priority)
-	self.Append(task)
+func (t *taskNodeImpl) Create(title string, priority Priority) Task {
+	task := newTask(t.Len(), title, priority)
+	t.Append(task)
 	return task
 }
 
-func (self *taskNodeImpl) Delete() {
-	parent := self.Parent().(*taskNodeImpl)
+func (t *taskNodeImpl) Delete() {
+	parent := t.Parent().(*taskNodeImpl)
 	if parent == nil {
 		panic("can not delete root node")
 	}
 	for i := 0; i < parent.Len(); i++ {
-		if parent.At(i).Equal(self) {
+		if parent.At(i).Equal(t) {
 			parent.tasks = append(parent.tasks[:i], parent.tasks[i+1:]...)
-			self.parent = nil
+			t.parent = nil
 			return
 		}
 	}
-	panic("couldn't find self in parent in order to delete")
+	panic("couldn't find t in parent in order to delete")
 }
 
 type taskImpl struct {
@@ -253,48 +257,48 @@ func newTask(id int, text string, priority Priority) Task {
 	}
 }
 
-func (self *taskImpl) ID() int {
-	return self.id
+func (t *taskImpl) ID() int {
+	return t.id
 }
 
-func (self *taskImpl) SetCreationTime(time time.Time) {
-	self.created = time
+func (t *taskImpl) SetCreationTime(time time.Time) {
+	t.created = time
 }
 
-func (self *taskImpl) CreationTime() time.Time {
-	return self.created
+func (t *taskImpl) CreationTime() time.Time {
+	return t.created
 }
 
-func (self *taskImpl) SetCompleted() {
-	self.SetCompletionTime(time.Now().UTC())
+func (t *taskImpl) SetCompleted() {
+	t.SetCompletionTime(time.Now().UTC())
 }
 
-func (self *taskImpl) SetCompletionTime(time time.Time) {
-	self.completed = time
+func (t *taskImpl) SetCompletionTime(time time.Time) {
+	t.completed = time
 }
 
-func (self *taskImpl) CompletionTime() time.Time {
-	return self.completed
+func (t *taskImpl) CompletionTime() time.Time {
+	return t.completed
 }
 
-func (self *taskImpl) Text() string {
-	return self.text
+func (t *taskImpl) Text() string {
+	return t.text
 }
 
-func (self *taskImpl) SetText(text string) {
-	self.text = text
+func (t *taskImpl) SetText(text string) {
+	t.text = text
 }
 
-func (self *taskImpl) Priority() Priority {
-	return self.priority
+func (t *taskImpl) Priority() Priority {
+	return t.priority
 }
 
-func (self *taskImpl) SetPriority(priority Priority) {
-	self.priority = priority
+func (t *taskImpl) SetPriority(priority Priority) {
+	t.priority = priority
 }
 
-func (self *taskImpl) Attributes() map[string]string {
-	return self.attributes
+func (t *taskImpl) Attributes() map[string]string {
+	return t.attributes
 }
 
 type taskListImpl struct {
@@ -323,16 +327,16 @@ func indexFromString(index string) Index {
 	return numericIndex
 }
 
-func (self *taskListImpl) ID() int {
+func (t *taskListImpl) ID() int {
 	return -1
 }
 
-func (self *taskListImpl) Find(index string) Task {
+func (t *taskListImpl) Find(index string) Task {
 	numericIndex := indexFromString(index)
 	if numericIndex == nil {
 		return nil
 	}
-	var node TaskNode = self // -golint
+	var node TaskNode = t // -golint
 	for _, i := range numericIndex {
 		if node = node.At(i); node == nil {
 			return nil
@@ -341,12 +345,28 @@ func (self *taskListImpl) Find(index string) Task {
 	return node.(Task)
 }
 
-func (self *taskListImpl) Title() string {
-	return self.title
+// FindAll recursively returns all matching nodes.
+func (t *taskListImpl) FindAll(predicate func(task Task) bool) []Task {
+	return findAll(t, predicate)
 }
 
-func (self *taskListImpl) SetTitle(title string) {
-	self.title = title
+func findAll(node TaskNode, predicate func(task Task) bool) []Task {
+	out := []Task{}
+	if n, ok := node.(Task); ok && predicate(n) {
+		out = append(out, n)
+	}
+	for i := 0; i < node.Len(); i++ {
+		out = append(out, findAll(node.At(i), predicate)...)
+	}
+	return out
+}
+
+func (t *taskListImpl) Title() string {
+	return t.title
+}
+
+func (t *taskListImpl) SetTitle(title string) {
+	t.title = title
 }
 
 func ReparentTask(node TaskNode, below TaskNode) {

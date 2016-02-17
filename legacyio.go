@@ -68,7 +68,7 @@ func NewLegacyIO() TaskListIO {
 	return &legacyIO{}
 }
 
-func (self *legacyIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
+func (l *legacyIO) Deserialize(reader io.Reader) (tasks TaskList, err error) {
 	todoXML := &xmlTodo{}
 	if err = xml.NewDecoder(reader).Decode(&todoXML); err != nil {
 		return nil, err
@@ -80,6 +80,6 @@ func (self *legacyIO) Deserialize(reader io.Reader) (tasks TaskList, err error) 
 	return
 }
 
-func (self *legacyIO) Serialize(writer io.Writer, tasks TaskList) error {
+func (l *legacyIO) Serialize(writer io.Writer, tasks TaskList) error {
 	return errors.New("serialization to legacy format not supported")
 }
