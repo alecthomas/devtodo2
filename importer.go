@@ -26,7 +26,7 @@ import (
 func importFile(file string) {
 	f, e := os.Open(file)
 	if e != nil {
-		fatal("failed to open %s: %s", file, e.Error())
+		fatalf("failed to open %s: %s", file, e.Error())
 	}
 	defer f.Close()
 	reader := bufio.NewReader(f)
@@ -36,7 +36,7 @@ func importFile(file string) {
 			break
 		}
 		if e != nil {
-			fatal("error reading %s: %s", file, e.Error())
+			fatalf("error reading %s: %s", file, e.Error())
 		}
 		text := string(line)
 		if strings.Contains(text, "TODO") {

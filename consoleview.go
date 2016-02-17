@@ -86,7 +86,7 @@ func taskState(task Task) int {
 	return ' '
 }
 
-func fatal(format string, args ...interface{}) {
+func fatalf(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "error: %s\n", fmt.Sprintf(format, args...))
 	os.Exit(1)
 }

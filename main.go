@@ -112,7 +112,7 @@ func doShowVersion() {
 func doShowInfo(tasks TaskList, index string) {
 	task := tasks.Find(index)
 	if task == nil {
-		fatal("no such task %s", index)
+		fatalf("no such task %s", index)
 	}
 	view := NewConsoleView()
 	view.ShowTaskInfo(task)
@@ -123,14 +123,14 @@ func processAction(tasks TaskList) {
 	var graft TaskNode = tasks // -golint
 	if *graftFlag != "root" {
 		if graft = tasks.Find(*graftFlag); graft == nil {
-			fatal("invalid graft index '%s'", *graftFlag)
+			fatalf("invalid graft index '%s'", *graftFlag)
 		}
 	}
 
 	switch {
 	case *addFlag:
 		if len(goopt.Args) == 0 {
-			fatal("expected text for new task")
+			fatalf("expected text for new task")
 		}
 		text := strings.Join(goopt.Args, " ")
 		doAdd(tasks, graft, priority, text)
@@ -142,7 +142,7 @@ func processAction(tasks TaskList) {
 		doRemove(tasks, resolveTaskReferences(tasks, goopt.Args))
 	case *reparentFlag:
 		if len(goopt.Args) < 1 {
-			fatal("expected <task> [<new-parent>] for reparenting")
+			fatalf("expected <task> [<new-parent>] for reparenting")
 		}
 		var below TaskNode
 		if len(goopt.Args) == 2 {
@@ -157,21 +157,21 @@ func processAction(tasks TaskList) {
 		doShowVersion()
 	case *infoFlag:
 		if len(goopt.Args) < 1 {
-			fatal("expected <task> for info")
+			fatalf("expected <task> for info")
 		}
 		doShowInfo(tasks, goopt.Args[0])
 	case *importFlag:
 		if len(goopt.Args) < 1 {
-			fatal("expected list of files to import")
+			fatalf("expected list of files to import")
 		}
 		doImport(tasks, goopt.Args)
 	case *editFlag:
 		if len(goopt.Args) < 1 {
-			fatal("expected [-p <priority>] <task> [<text>]")
+			fatalf("expected [-p <priority>] <task> [<text>]")
 		}
 		task := tasks.Find(goopt.Args[0])
 		if task == nil {
-			fatal("invalid task %s", goopt.Args[0])
+			fatalf("invalid task %s", goopt.Args[0])
 		}
 		text := strings.Join(goopt.Args[1:], " ")
 		if *priorityFlag == "" {
@@ -186,7 +186,7 @@ func processAction(tasks TaskList) {
 func resolveTaskReference(tasks TaskList, index string) Task {
 	task := tasks.Find(index)
 	if task == nil {
-		fatal("invalid task index %s", index)
+		fatalf("invalid task index %s", index)
 	}
 	return task
 }
@@ -234,7 +234,7 @@ func resolveTaskReferences(tasks TaskList, indices []string) []Task {
 			// Expand ranges. eg. 1.2-5 expands to 1.2 1.3 1.4 1.5
 			indexes := expandRange(index)
 			if indexes == nil {
-				fatal("invalid task range %s", index)
+				fatalf("invalid task range %s", index)
 			}
 			for _, rangeIndex := range indexes {
 				task := resolveTaskReference(tasks, rangeIndex)
@@ -245,7 +245,7 @@ func resolveTaskReferences(tasks TaskList, indices []string) []Task {
 		}
 	}
 	if len(references) == 0 {
-		fatal("no tasks provided to mark done")
+		fatalf("no tasks provided to mark done")
 	}
 	return references
 }
@@ -281,17 +281,17 @@ func saveTaskList(tasks TaskList) {
 				}
 				if _, err := os.Stat(path); err == nil {
 					if err = os.Rename(path, previous); err != nil {
-						fatal("unable to rename %s to %s", path, previous)
+						fatalf("unable to rename %s to %s", path, previous)
 					}
 				}
 				if err = os.Rename(temp, path); err != nil {
-					fatal("unable to rename %s to %s", temp, path)
+					fatalf("unable to rename %s to %s", temp, path)
 				}
 			}
 		}()
 		writer := NewJSONIO()
 		if serializeError = writer.Serialize(file, tasks); serializeError != nil {
-			fatal(serializeError.Error())
+			fatalf(serializeError.Error())
 		}
 	}
 }
@@ -333,7 +333,7 @@ todo2 [-p <priority>] -e <task> [<text>]
 
 	tasks, err := loadTaskList()
 	if err != nil {
-		fatal("%s", err)
+		fatalf("%s", err)
 	}
 	if tasks == nil {
 		tasks = NewTaskList()
