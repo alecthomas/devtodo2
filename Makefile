@@ -15,9 +15,9 @@ $(TARG).1: $(TARG)
 	./$(TARG) --create-manpage > $@
 
 install: $(TARG) $(TARG).1
-	install -D -d -m755 $(bindir)
+	mkdir -p $(bindir)
+	mkdir -p $(mandir)
 	install -m755 $(TARG) $(bindir)
-	install -D -d -m755 $(man1dir)
 	install -m644 $(TARG).1 $(man1dir)
 
 clean:
