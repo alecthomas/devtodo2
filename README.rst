@@ -14,7 +14,7 @@ need Go 1 or a release candidate.
 
 Once you have Go installed and your ``GOPATH`` set, do the following::
 
-  $ go get github.com/droundy/goopt
+  $ go get gopkg.in/alecthomas/kingpin.v2
   $ git clone git://github.com/alecthomas/devtodo2.git
   $ cd devtodo2
   $ make install

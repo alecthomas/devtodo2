@@ -12,12 +12,10 @@ $(TARG): $(GOFILES)
 	go build -o $@ $^
 
 $(TARG).1: $(TARG)
-	./$(TARG) --create-manpage > $@
+	./$(TARG) --help-man > $@
 
 install: $(TARG) $(TARG).1
-	install -D -d -m755 $(bindir)
 	install -m755 $(TARG) $(bindir)
-	install -D -d -m755 $(man1dir)
 	install -m644 $(TARG).1 $(man1dir)
 
 clean:
