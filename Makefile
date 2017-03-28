@@ -16,7 +16,7 @@ $(TARG).1: $(TARG)
 
 install: $(TARG) $(TARG).1
 	install -m755 $(TARG) $(bindir)/$(TARG)
-	install -m644 $(TARG).1 $(man1dir)/$(TARG).1
+	install -D -m644 $(TARG).1 $(man1dir)/$(TARG).1
 
 clean:
 	rm -f $(TARG) $(TARG).1
