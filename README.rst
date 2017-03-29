@@ -17,7 +17,8 @@ Once you have Go installed and your ``GOPATH`` set, do the following::
   $ go get gopkg.in/alecthomas/kingpin.v2
   $ git clone git://github.com/alecthomas/devtodo2.git
   $ cd devtodo2
-  $ make install
+  $ make
+  $ [sudo] make install
 
 This will install to ``/usr/local`` by default, but that can be overridden by
 passing ``prefix=<dir>`` to ``make``. The installation directories can be
