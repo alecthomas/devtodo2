@@ -23,3 +23,7 @@ install: copy clean
 
 clean:
 	rm -f $(TARG) $(TARG).1
+
+uninstall:
+	rm $(bindir)/$(TARG)
+	rm $(man1dir)/$(TARG).1
