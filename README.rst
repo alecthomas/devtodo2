@@ -35,6 +35,8 @@ installed.
 
 Uninstalling
 ----------
+If you want to uninstall, do the following::
+
   $ cd devtodo2
   $ [sudo] make uninstall
 
