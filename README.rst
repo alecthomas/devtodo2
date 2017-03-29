@@ -33,6 +33,11 @@ and ``$(mandir)/man1``, respectively.
 But the binary will be named ``devtodo2`` and the man page will not be
 installed.
 
+Uninstalling
+----------
+  $ cd devtodo2
+  $ [sudo] make uninstall
+
 Examples
 --------
 
