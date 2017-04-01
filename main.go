@@ -58,20 +58,22 @@ var editFlag = kingpin.Flag("edit", "Edit a task, replacing its text.").Short('e
 var markDoneFlag = kingpin.Flag("done", "Mark the given tasks as done.").Short('d').Bool()
 var markNotDoneFlag = kingpin.Flag("not-done", "Mark the given tasks as not done.").Short('D').Bool()
 var removeFlag = kingpin.Flag("remove", "Remove the given tasks.").Bool()
-var reparentFlag = kingpin.Flag("reparent", "Reparent task A below task B").Bool()
+var reparentFlag = kingpin.Flag("reparent", "Reparent task A below task B.").Bool()
 var titleFlag = kingpin.Flag("title", "Set the task list title.").Bool()
 var infoFlag = kingpin.Flag("info", "Show information on a task.").Bool()
 var importFlag = kingpin.Flag("import", "Import and synchronise TODO items from source code.").Bool()
 var purgeFlag = kingpin.Flag("purge", "Purge completed tasks older than this.").Default("-1s").PlaceHolder("0s").Duration()
 
 // Options
-var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').Default("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
+var priorityFlag = kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').Default("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
 var graftFlag = kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").String()
-var fileFlag = kingpin.Flag("file", "Flie to load task lists from.").Default(".todo2").String()
+var fileFlag = kingpin.Flag("file", "File to load task lists from.").Default(".todo2").String()
 var legacyFileFlag = kingpin.Flag("legacy-file", "File to load legacy task lists from.").Default(".todo").String()
 var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short('s').Bool()
-var orderFlag = kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done)").Default("priority").Enum("index", "created", "completed", "text", "priority", "duration", "done")
+var orderFlag = kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done).").Default("priority").Enum("index", "created", "completed", "text", "priority", "duration", "done")
+
+var configFileFlag = kingpin.Flag("config", "File to load configuration from.").Default(".todorc").String()
 
 // Task text.
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
@@ -331,6 +333,14 @@ func saveTaskList(tasks TaskList) {
 			fatalf(serializeError.Error())
 		}
 	}
+}
+
+func loadConfiguration() {
+	if file, err := os.Open(*configFileFlag); err == nil {
+		defer file.Close()
+		loader := NewJSONIO()
+	}
+
 }
 
 func main() {
