@@ -73,12 +73,13 @@ var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short(
 var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short('s').Bool()
 var orderFlag = kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done).").Default("priority").Enum("index", "created", "completed", "text", "priority", "duration", "done")
 
+//config
 var configFileFlag = kingpin.Flag("config", "File to load configuration from.").Default(".todorc").String()
 
 // Task text.
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
 
-func doView(tasks TaskList) {
+func doView(tasks TaskList, config *Config) {
 	order, reversed := OrderFromString(*orderFlag)
 	options := &ViewOptions{
 		ShowAll:   *allFlag,
@@ -157,7 +158,7 @@ func doShowInfo(tasks TaskList, index string) {
 	view.ShowTaskInfo(task)
 }
 
-func processAction(tasks TaskList) {
+func processAction(tasks TaskList, config *Config) {
 	priority := PriorityFromString(*priorityFlag)
 	var graft TaskNode = tasks // -golint
 	if *graftFlag != "root" {
@@ -218,7 +219,7 @@ func processAction(tasks TaskList) {
 	case *purgeFlag != -1*time.Second:
 		doPurge(tasks, *purgeFlag)
 	default:
-		doView(tasks)
+		doView(tasks, config)
 	}
 }
 
@@ -335,11 +336,17 @@ func saveTaskList(tasks TaskList) {
 	}
 }
 
-func loadConfiguration() {
-	if file, err := os.Open(*configFileFlag); err == nil {
+func loadConfiguration(configFilePath string) (config *Config, err error) {
+	if file, err := os.Open(configFilePath); err == nil {
 		defer file.Close()
-		loader := NewJSONIO()
+		configJSONIO := NewConfigJSONIO()
+		return configJSONIO.Deserialize(file)
 	}
+	return nil, err
+
+}
+
+func standardizeConfiguration() (config *Config, err error) {
 
 }
 
@@ -348,6 +355,10 @@ func main() {
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
 	kingpin.Parse()
 
+	config, _ := loadConfiguration(*configFileFlag)
+
+	fmt.Printf("Config: %+v", config)
+
 	tasks, err := loadTaskList()
 	if err != nil {
 		fatalf("%s", err)
@@ -355,5 +366,5 @@ func main() {
 	if tasks == nil {
 		tasks = NewTaskList()
 	}
-	processAction(tasks)
+	processAction(tasks, config)
 }
