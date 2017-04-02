@@ -14,7 +14,7 @@ $(TARG): $(GOFILES)
 $(TARG).1: $(TARG)
 	./$(TARG) --help-man > $@
 
-install: 
+install: $(TARG) $(TARG).1
 	install -m755 $(TARG) $(bindir)/$(TARG)
 	install -d -m644 $(man1dir)
 	install -m644 $(TARG).1 $(man1dir)/$(TARG).1
