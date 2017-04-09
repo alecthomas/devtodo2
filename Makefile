@@ -14,10 +14,11 @@ $(TARG): $(GOFILES)
 $(TARG).1: $(TARG)
 	./$(TARG) --help-man > $@
 
-install: $(TARG) $(TARG).1
+install: 
 	install -m755 $(TARG) $(bindir)/$(TARG)
 	install -d -m644 $(man1dir)
 	install -m644 $(TARG).1 $(man1dir)/$(TARG).1
 
-clean:
-	rm -f $(TARG) $(TARG).1
+uninstall:
+	rm $(bindir)/$(TARG)
+	rm $(man1dir)/$(TARG).1
