@@ -1,100 +1,96 @@
+/*
+  Copyright 2011 Alec Thomas
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 )
 
-type ColorRGB struct {
-	R int
-	G int
-	B int
-}
-
-type ColorConfigRGB struct {
-	VeryLow  *ColorRGB
-	Low      *ColorRGB
-	Medium   *ColorRGB
-	High     *ColorRGB
-	VeryHigh *ColorRGB
-}
-
-type ColorConfigHex struct {
-	VeryLow  string
-	Low      string
-	Medium   string
-	High     string
-	VeryHigh string
-}
-
-//@TODO: Figure out how bright white fits into this,
-//	 it has the same RGB as regular 8 byte white.
-//@TODO: Figure out how background colors should be implemented.
-var rgbToAnsiEscapeSequence = map[ColorRGB]string{
-	ColorRGB{0, 0, 0}:       FGBLACK,
-	ColorRGB{170, 0, 0}:     FGRED,
-	ColorRGB{0, 170, 0}:     FGGREEN,
-	ColorRGB{170, 85, 0}:    FGYELLOW,
-	ColorRGB{0, 0, 170}:     FGBLUE,
-	ColorRGB{170, 0, 170}:   FGMAGENTA,
-	ColorRGB{0, 170, 170}:   FGCYAN,
-	ColorRGB{255, 255, 255}: FGWHITE,
-	ColorRGB{255, 85, 85}:   BRIGHT + FGRED,
-	ColorRGB{85, 255, 85}:   BRIGHT + FGGREEN,
-	ColorRGB{255, 255, 85}:  BRIGHT + FGYELLOW,
-	ColorRGB{85, 85, 255}:   BRIGHT + FGBLUE,
-	ColorRGB{255, 85, 255}:  BRIGHT + FGMAGENTA,
-	ColorRGB{85, 255, 255}:  BRIGHT + FGCYAN,
-}
-
-func findClosestAnsiEscapeSequenceToColor(color *ColorRGB) (string, error) {
-	for k, v := range rgbToAnsiEscapeSequence {
-		fmt.Printf("Key: %+v \n", k)
-		fmt.Printf("Value: %s \n", v)
-	}
-	return "", nil
-}
-
-type UnmarshalledConfig struct {
-	ColorConfigRGB *ColorConfigRGB
-	ColorConfigHex *ColorConfigHex
-}
-
 type ConfigIO interface {
-	Deserialize(reader io.Reader) (*UnmarshalledConfig, error)
+	Deserialize(reader io.Reader) (*Config, error)
 }
 
-type ConfigJSONIO struct {
+func NewConfigIO() ConfigIO {
+	return &ConfigIO{}
+}
+
+type marshalableConfig struct {
+	Colors     map[string]string
+	Priority   string
+	Graft      string
+	File       string
+	LegacyFile string
+	Order      string
+}
+
+func fromMarshalableConfig(marshalableConfig *marshalableConfig) (config Config) {
+	config := &Config{
+		Colors:     marshalableConfig.Colors,
+		Priority:   marshalableConfig.Priority,
+		Graft:      marshalableConfig.Graft,
+		File:       marshalableConfig.File,
+		LegacyFile: marshalableConfig.LegacyFile,
+		Order:      marshalableConfig.Order,
+	}
+	return
+}
+
+func (configIO *ConfigIO) Deserialize(reader io.Reader) (config Config, err error) {
+	decoder := json.NewDecoder(reader)
+	marshalableConfig := &marshalableConfig{}
+	err = decoder.Decode(&marshalableConfig)
+	if err == nil {
+		config = fromMarshalableConfig(marshalableConfig)
+	}
+	return
 }
 
 type Config struct {
-	VeryLow  string
-	Low      string
-	Medium   string
-	High     string
-	VeryHigh string
+	Colors     map[string]string
+	Priority   string
+	Graft      string
+	File       string
+	LegacyFile string
+	Order      string
 }
 
-func NewConfig(unmarshalledConfig *UnmarshalledConfig) (*Config, error) {
-	config := new(Config)
-	medium, err := findClosestAnsiEscapeSequenceToColor(unmarshalledConfig.ColorConfigRGB.Medium)
-	if err != nil {
-		fmt.Print(err)
+var (
+	colors = map[string]string{
+		"VeryLow":  "",
+		"Low":      "",
+		"Medium":   "",
+		"High":     "",
+		"VeryHigh": "",
 	}
-	config.Medium = medium
-	return config, nil
-}
+	priority   = "medium"
+	graft      = "root"
+	file       = ".todo2"
+	legacyFile = ".todo"
+	order      = "priority"
+	configFile = ".todorc"
 
-func NewConfigJSONIO() (configJSONIO *ConfigJSONIO) {
-	return new(ConfigJSONIO)
-}
-
-func (configJSONIO *ConfigJSONIO) Deserialize(reader io.Reader) (*UnmarshalledConfig, error) {
-	decoder := json.NewDecoder(reader)
-	cfg := &UnmarshalledConfig{}
-	if err := decoder.Decode(&cfg); err == nil {
-		return cfg, nil
+	config = &Config{
+		Colors:     colors,
+		Priority:   priority,
+		Graft:      graft,
+		File:       file,
+		LegacyFile: legacyFile,
+		Order:      order,
+		ConfigFile: configFile,
 	}
-	return nil, nil
-}
+)

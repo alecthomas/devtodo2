@@ -28,6 +28,7 @@ import (
 
 const usage = `DevTodo2 - a hierarchical command-line task manager
 
+
 DevTodo is a program aimed specifically at programmers (but usable by anybody
 at the terminal) to aid in day-to-day development.
 
@@ -52,7 +53,6 @@ depend on another.
     Edit an existing task.
 `
 
-// Actions
 var addFlag = kingpin.Flag("add", "Add a task.").Short('a').Bool()
 var editFlag = kingpin.Flag("edit", "Edit a task, replacing its text.").Short('e').Bool()
 var markDoneFlag = kingpin.Flag("done", "Mark the given tasks as done.").Short('d').Bool()
@@ -64,20 +64,34 @@ var infoFlag = kingpin.Flag("info", "Show information on a task.").Bool()
 var importFlag = kingpin.Flag("import", "Import and synchronise TODO items from source code.").Bool()
 var purgeFlag = kingpin.Flag("purge", "Purge completed tasks older than this.").Default("-1s").PlaceHolder("0s").Duration()
 
-// Options
-var priorityFlag = kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').Default("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
-var graftFlag = kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").String()
-var fileFlag = kingpin.Flag("file", "File to load task lists from.").Default(".todo2").String()
-var legacyFileFlag = kingpin.Flag("legacy-file", "File to load legacy task lists from.").Default(".todo").String()
-var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short('s').Bool()
-var orderFlag = kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done).").Default("priority").Enum("index", "created", "completed", "text", "priority", "duration", "done")
-
-//config
-var configFileFlag = kingpin.Flag("config", "File to load configuration from.").Default(".todorc").String()
-
-// Task text.
+var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
+
+func Init() {
+	loadedConfig, err := loadConfiguration(config.ConfigFile)
+	if loadedConfig.Priority != "" {
+		&config.Priority = loadedConfig.Priority
+	}
+	if loadedConfig.File != "" {
+		&config.File = loadedConfig.File
+	}
+	if loadedConfig.Graft != "" {
+		&config.Graft = loadedConfig.Graft
+	}
+	if loadedConfig.LegacyFile != "" {
+		&config.LegacyFile = loadedConfig.LegacyFile
+	}
+	if loadedConfig.Colors != nil {
+		&config.Colors = loadedConfig.Colors
+	}
+
+	kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').Enum("veryhigh", "high", "medium", "low", "verylow").StringVar(&config.Priority)
+	kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').StringVar(&config.Graft)
+	kingpin.Flag("file", "File to load task lists from.").StringVar(&config.File)
+	kingpin.Flag("legacy-file", "File to load legacy task lists from.").StringVar(&config.LegacyFile)
+	kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done).").Enum("index", "created", "completed", "text", "priority", "duration", "done").StringVar(&config.Order)
+}
 
 func doView(tasks TaskList, config *Config) {
 	order, reversed := OrderFromString(*orderFlag)
@@ -133,7 +147,7 @@ func doRemove(tasks TaskList, references []Task) {
 }
 
 func doPurge(tasks TaskList, age time.Duration) {
-	cutoff := time.Now().Add(-age)
+	cutoff := time.Now().Add(-age).StringVar(&config.Priority).StringVar(&config.Priority)
 	matches := tasks.FindAll(func(task Task) bool {
 		return !task.CompletionTime().IsZero() && task.CompletionTime().Before(cutoff)
 	})
@@ -336,7 +350,7 @@ func saveTaskList(tasks TaskList) {
 	}
 }
 
-func loadConfiguration(configFilePath string) (config *UnmarshalledConfig, err error) {
+func loadConfiguration(configFilePath string) (config *Config, err error) {
 	if file, err := os.Open(configFilePath); err == nil {
 		defer file.Close()
 		configJSONIO := NewConfigJSONIO()
@@ -349,9 +363,6 @@ func main() {
 	kingpin.CommandLine.Help = usage
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
 	kingpin.Parse()
-
-	unmarshalledConfig, _ := loadConfiguration(*configFileFlag)
-	config, err := NewConfig(unmarshalledConfig)
 
 	fmt.Printf("Config: %+v", config)
 
