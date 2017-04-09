@@ -336,18 +336,13 @@ func saveTaskList(tasks TaskList) {
 	}
 }
 
-func loadConfiguration(configFilePath string) (config *Config, err error) {
+func loadConfiguration(configFilePath string) (config *UnmarshalledConfig, err error) {
 	if file, err := os.Open(configFilePath); err == nil {
 		defer file.Close()
 		configJSONIO := NewConfigJSONIO()
 		return configJSONIO.Deserialize(file)
 	}
 	return nil, err
-
-}
-
-func standardizeConfiguration() (config *Config, err error) {
-
 }
 
 func main() {
@@ -355,7 +350,8 @@ func main() {
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
 	kingpin.Parse()
 
-	config, _ := loadConfiguration(*configFileFlag)
+	unmarshalledConfig, _ := loadConfiguration(*configFileFlag)
+	config, err := NewConfig(unmarshalledConfig)
 
 	fmt.Printf("Config: %+v", config)
 
