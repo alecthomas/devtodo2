@@ -84,3 +84,8 @@ the new format.
 You can specify the version 1 filename to load with
 ``--legacy-file=<filename>``, and the version 2 filename with
 ``--file=<filename>``.
+
+Version
+~~~~~~~
+
+The current version is: 2.0
