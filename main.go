@@ -330,11 +330,10 @@ func main() {
 	if err == nil {
 		copyToConfigFromMarshalableConfig(marshalableConfig, config)
 	}
-	copyToConfigFromCMDOptions(config)
 
 	kingpin.CommandLine.Help = usage
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
-	kingpin.Parse()
+	copyToConfigFromCMDOptions(config)
 
 	tasks, err := loadTaskList()
 	if err != nil {

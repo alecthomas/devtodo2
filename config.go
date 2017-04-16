@@ -59,11 +59,11 @@ func GetConfigInstance() *config {
 			VERYHIGH: BRIGHTRED,
 		}
 		bgColors := map[Priority]string{
-			VERYLOW:  "BLACK",
-			LOW:      "BLACK",
-			MEDIUM:   "BLACK",
-			HIGH:     "BLACK",
-			VERYHIGH: "BLACK",
+			VERYLOW:  NOCOLOR,
+			LOW:      NOCOLOR,
+			MEDIUM:   NOCOLOR,
+			HIGH:     NOCOLOR,
+			VERYHIGH: NOCOLOR,
 		}
 		priority := "medium"
 		graft := "root"
@@ -164,51 +164,53 @@ func copyToConfigFromCMDOptions(config *config) {
 	colors := []string{WHITE, BLUE, RED, CYAN, GREEN, YELLOW, BLACK, MAGENTA, BRIGHTWHITE, BRIGHTBLUE, BRIGHTRED, BRIGHTCYAN, BRIGHTGREEN, BRIGHTYELLOW, BRIGHTBLACK, BRIGHTMAGENTA, NOCOLOR}
 
 	var veryLowFGColor = kingpin.Flag("verylowfgcolor", "Very low priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
+	var lowFGColor = kingpin.Flag("lowfgcolor", "Low priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
+	var mediumFGColor = kingpin.Flag("mediumfgcolor", "Medium priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
+	var highFGColor = kingpin.Flag("highfgcolor", "High priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
+	var veryHighFGColor = kingpin.Flag("veryhighfgcolor", "Very high task texts foreground color.").Default(NOCOLOR).Enum(colors...)
+	var veryLowBGColor = kingpin.Flag("verylowbgcolor", "Very low priority task texts background color.").Default(NOCOLOR).Enum(colors...)
+	var lowBGColor = kingpin.Flag("lowbgcolor", "Low priority task texts background color.").Default(NOCOLOR).Enum(colors...)
+	var mediumBGColor = kingpin.Flag("mediumbgcolor", "Medium priority task texts background color.").Default(NOCOLOR).Enum(colors...)
+	var highBGColor = kingpin.Flag("highbgcolor", "High priority task texts background color.").Default(NOCOLOR).Enum(colors...)
+	var veryHighBGColor = kingpin.Flag("veryhighbgcolor", "Very high priority task texts background color.").Default(NOCOLOR).Enum(colors...)
+	kingpin.Parse()
+
 	if *veryLowFGColor != NOCOLOR {
 		config.FGColors[priorityMapFromString[verylow]] = *veryLowFGColor
 	}
 
-	var lowFGColor = kingpin.Flag("lowfgcolor", "Low priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
 	if *lowFGColor != NOCOLOR {
 		config.FGColors[priorityMapFromString[low]] = *lowFGColor
 	}
 
-	var mediumFGColor = kingpin.Flag("mediumfgcolor", "Medium priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
 	if *mediumFGColor != NOCOLOR {
 		config.FGColors[priorityMapFromString[medium]] = *mediumFGColor
 	}
 
-	var highFGColor = kingpin.Flag("highfgcolor", "High priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
 	if *highFGColor != NOCOLOR {
 		config.FGColors[priorityMapFromString[high]] = *highFGColor
 	}
 
-	var veryHighFGColor = kingpin.Flag("veryhighfgcolor", "Very high task texts foreground color.").Default(NOCOLOR).Enum(colors...)
 	if *veryHighFGColor != NOCOLOR {
 		config.FGColors[priorityMapFromString[veryhigh]] = *veryHighFGColor
 	}
 
-	var veryLowBGColor = kingpin.Flag("verylowbgcolor", "Very low priority task texts background color.").Default(NOCOLOR).Enum(colors...)
 	if *veryLowBGColor != NOCOLOR {
 		config.BGColors[priorityMapFromString[verylow]] = *veryLowFGColor
 	}
 
-	var lowBGColor = kingpin.Flag("lowbgcolor", "Low priority task texts background color.").Default(NOCOLOR).Enum(colors...)
 	if *lowBGColor != NOCOLOR {
 		config.BGColors[priorityMapFromString[low]] = *lowBGColor
 	}
 
-	var mediumBGColor = kingpin.Flag("mediumbgcolor", "Medium priority task texts background color.").Default(NOCOLOR).Enum(colors...)
 	if *mediumBGColor != NOCOLOR {
 		config.BGColors[priorityMapFromString[medium]] = *mediumBGColor
 	}
 
-	var highBGColor = kingpin.Flag("highbgcolor", "High priority task texts background color.").Default(NOCOLOR).Enum(colors...)
 	if *highBGColor != NOCOLOR {
 		config.BGColors[priorityMapFromString[high]] = *highBGColor
 	}
 
-	var veryHighBGColor = kingpin.Flag("veryhighbgcolor", "Very high priority task texts background color.").Default(NOCOLOR).Enum(colors...)
 	if *veryHighBGColor != NOCOLOR {
 		config.BGColors[priorityMapFromString[veryhigh]] = *veryHighBGColor
 	}

@@ -41,7 +41,7 @@ func TestLoadAllOptionsInCorrectOrderEspeciallyNonColorOptions(t *testing.T) {
 		high:     BLUE,
 		veryhigh: CYAN,
 	}
-	defaultPriority := "medium"
+	defaultPriority := medium
 	graft := "root"
 	file := ".todo2"
 	legacyFile := ".todo"
@@ -55,15 +55,13 @@ func TestLoadAllOptionsInCorrectOrderEspeciallyNonColorOptions(t *testing.T) {
 		LegacyFile: legacyFile,
 		Order:      order,
 	}
-	priority := "veryhigh"
-	os.Args = []string{"devtodo2", "-A", "--lowfgcolor", BLACK}
+	os.Args = []string{"devtodo2", "-A", "--verylowfgcolor", BLACK}
 	copyToConfigFromMarshalableConfig(marshalableConfig, config)
 
 	copyToConfigFromCMDOptions(config)
-	kingpin.Parse()
 
-	if config.Priority != priority {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.Priority Expected:%s , Got: %s \n", priority, config.Priority))
+	if config.Priority != medium {
+		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.Priority Expected:%s , Got: %s \n", medium, config.Priority))
 		t.Fail()
 	}
 	if config.Graft != "root" {
