@@ -25,6 +25,19 @@ type ViewOptions struct {
 	Reversed  bool
 	Summarise bool
 	ShowAll   bool
+	FGColors  map[Priority]string
+	BGColors  map[Priority]string
+}
+
+func NewViewOptions(showAll bool, summarise bool, order Order, reversed bool, fgColors map[Priority]string, bgColors map[Priority]string) *ViewOptions {
+	return &ViewOptions{
+		ShowAll:   showAll,
+		Summarise: summarise,
+		Order:     order,
+		Reversed:  reversed,
+		FGColors:  fgColors,
+		BGColors:  bgColors,
+	}
 }
 
 type View interface {

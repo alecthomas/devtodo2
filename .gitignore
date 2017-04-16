@@ -4,3 +4,6 @@ tiocgwinsz.go
 tiocgwinsz
 .todo2~
 .todorc
+.todo2
+*.swp
+devtodo2

@@ -68,39 +68,10 @@ var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short(
 var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
 
-func Init() {
-	loadedConfig, err := loadConfiguration(config.ConfigFile)
-	if loadedConfig.Priority != "" {
-		&config.Priority = loadedConfig.Priority
-	}
-	if loadedConfig.File != "" {
-		&config.File = loadedConfig.File
-	}
-	if loadedConfig.Graft != "" {
-		&config.Graft = loadedConfig.Graft
-	}
-	if loadedConfig.LegacyFile != "" {
-		&config.LegacyFile = loadedConfig.LegacyFile
-	}
-	if loadedConfig.Colors != nil {
-		&config.Colors = loadedConfig.Colors
-	}
-
-	kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').Enum("veryhigh", "high", "medium", "low", "verylow").StringVar(&config.Priority)
-	kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').StringVar(&config.Graft)
-	kingpin.Flag("file", "File to load task lists from.").StringVar(&config.File)
-	kingpin.Flag("legacy-file", "File to load legacy task lists from.").StringVar(&config.LegacyFile)
-	kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done).").Enum("index", "created", "completed", "text", "priority", "duration", "done").StringVar(&config.Order)
-}
-
-func doView(tasks TaskList, config *Config) {
-	order, reversed := OrderFromString(*orderFlag)
-	options := &ViewOptions{
-		ShowAll:   *allFlag,
-		Summarise: *summaryFlag,
-		Order:     order,
-		Reversed:  reversed,
-	}
+func doView(tasks TaskList) {
+	config := GetConfigInstance()
+	order, reversed := OrderFromString(config.Order)
+	options := NewViewOptions(*allFlag, *summaryFlag, order, reversed, config.FGColors, config.BGColors)
 	view := NewConsoleView()
 	view.ShowTree(tasks, options)
 }
@@ -147,7 +118,7 @@ func doRemove(tasks TaskList, references []Task) {
 }
 
 func doPurge(tasks TaskList, age time.Duration) {
-	cutoff := time.Now().Add(-age).StringVar(&config.Priority).StringVar(&config.Priority)
+	cutoff := time.Now().Add(-age)
 	matches := tasks.FindAll(func(task Task) bool {
 		return !task.CompletionTime().IsZero() && task.CompletionTime().Before(cutoff)
 	})
@@ -172,12 +143,13 @@ func doShowInfo(tasks TaskList, index string) {
 	view.ShowTaskInfo(task)
 }
 
-func processAction(tasks TaskList, config *Config) {
-	priority := PriorityFromString(*priorityFlag)
+func processAction(tasks TaskList) {
+	config := GetConfigInstance()
+	priority := PriorityFromString(config.Priority)
 	var graft TaskNode = tasks // -golint
-	if *graftFlag != "root" {
-		if graft = tasks.Find(*graftFlag); graft == nil {
-			fatalf("invalid graft index '%s'", *graftFlag)
+	if config.Graft != "root" {
+		if graft = tasks.Find(config.Graft); graft == nil {
+			fatalf("invalid graft index '%s'", config.Graft)
 		}
 	}
 
@@ -226,14 +198,14 @@ func processAction(tasks TaskList, config *Config) {
 			fatalf("invalid task %s", (*taskText)[0])
 		}
 		text := strings.Join(*taskText, " ")
-		if *priorityFlag == "" {
+		if config.Priority == "" {
 			priority = -1
 		}
 		doEditTask(tasks, task, priority, text)
 	case *purgeFlag != -1*time.Second:
 		doPurge(tasks, *purgeFlag)
 	default:
-		doView(tasks, config)
+		doView(tasks)
 	}
 }
 
@@ -305,14 +277,15 @@ func resolveTaskReferences(tasks TaskList, indices []string) []Task {
 }
 
 func loadTaskList() (tasks TaskList, err error) {
+	config := GetConfigInstance()
 	// Try loading new-style task file
-	if file, err := os.Open(*fileFlag); err == nil {
+	if file, err := os.Open(config.File); err == nil {
 		defer file.Close()
 		loader := NewJSONIO()
 		return loader.Deserialize(file)
 	}
 	// Try loading legacy task file
-	if file, err := os.Open(*legacyFileFlag); err == nil {
+	if file, err := os.Open(config.LegacyFile); err == nil {
 		defer file.Close()
 		loader := NewLegacyIO()
 		return loader.Deserialize(file)
@@ -321,7 +294,8 @@ func loadTaskList() (tasks TaskList, err error) {
 }
 
 func saveTaskList(tasks TaskList) {
-	path := *fileFlag
+	config := GetConfigInstance()
+	path := config.File
 	previous := path + "~"
 	temp := path + "~~"
 	var serializeError error
@@ -350,21 +324,17 @@ func saveTaskList(tasks TaskList) {
 	}
 }
 
-func loadConfiguration(configFilePath string) (config *Config, err error) {
-	if file, err := os.Open(configFilePath); err == nil {
-		defer file.Close()
-		configJSONIO := NewConfigJSONIO()
-		return configJSONIO.Deserialize(file)
-	}
-	return nil, err
-}
-
 func main() {
+	config := GetConfigInstance()
+	marshalableConfig, err := loadConfigurationFile(config)
+	if err == nil {
+		copyToConfigFromMarshalableConfig(marshalableConfig, config)
+	}
+	copyToConfigFromCMDOptions(config)
+
 	kingpin.CommandLine.Help = usage
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
 	kingpin.Parse()
-
-	fmt.Printf("Config: %+v", config)
 
 	tasks, err := loadTaskList()
 	if err != nil {
@@ -373,5 +343,5 @@ func main() {
 	if tasks == nil {
 		tasks = NewTaskList()
 	}
-	processAction(tasks, config)
+	processAction(tasks)
 }

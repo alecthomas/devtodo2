@@ -34,6 +34,14 @@ const (
 	VERYHIGH
 )
 
+const (
+	verylow  = "verylow"
+	low      = "low"
+	medium   = "medium"
+	high     = "high"
+	veryhigh = "veryhigh"
+)
+
 type Order int
 
 // Order constants.
@@ -102,19 +110,19 @@ type Index []int
 // Implementation
 
 var priorityMapFromString = map[string]Priority{
-	"veryhigh": VERYHIGH,
-	"high":     HIGH,
-	"medium":   MEDIUM,
-	"low":      LOW,
-	"verylow":  VERYLOW,
+	veryhigh: VERYHIGH,
+	high:     HIGH,
+	medium:   MEDIUM,
+	low:      LOW,
+	verylow:  VERYLOW,
 }
 
 var priorityToString = map[Priority]string{
-	VERYHIGH: "veryhigh",
-	HIGH:     "high",
-	MEDIUM:   "medium",
-	VERYLOW:  "verylow",
-	LOW:      "low",
+	VERYHIGH: veryhigh,
+	HIGH:     high,
+	MEDIUM:   medium,
+	VERYLOW:  verylow,
+	LOW:      low,
 }
 
 func (p Priority) String() string {
