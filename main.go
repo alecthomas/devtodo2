@@ -327,7 +327,7 @@ func saveTaskList(tasks TaskList) {
 func main() {
 	config := GetConfigInstance()
 	marshalableConfig, err := loadConfigurationFile(config)
-	if err == nil {
+	if marshalableConfig != nil {
 		copyToConfigFromMarshalableConfig(marshalableConfig, config)
 	}
 
