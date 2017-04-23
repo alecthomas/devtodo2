@@ -18,7 +18,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
 	"os"
