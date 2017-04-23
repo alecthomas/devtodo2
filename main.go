@@ -68,56 +68,55 @@ var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short(
 var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
 
-func doView(tasks TaskList) {
-	config := GetConfigInstance()
+func doView(tasks TaskList, config *config) {
 	order, reversed := OrderFromString(config.Order)
 	options := NewViewOptions(*allFlag, *summaryFlag, order, reversed, config.FGColors, config.BGColors)
 	view := NewConsoleView()
 	view.ShowTree(tasks, options)
 }
 
-func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
+func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string, config *config) {
 	graft.Create(text, priority)
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doEditTask(tasks TaskList, task Task, priority Priority, text string) {
+func doEditTask(tasks TaskList, task Task, priority Priority, text string, config *config) {
 	if text != "" {
 		task.SetText(text)
 	}
 	if priority != -1 {
 		task.SetPriority(priority)
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doMarkDone(tasks TaskList, references []Task) {
+func doMarkDone(tasks TaskList, references []Task, config *config) {
 	for _, task := range references {
 		task.SetCompleted()
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doMarkNotDone(tasks TaskList, references []Task) {
+func doMarkNotDone(tasks TaskList, references []Task, config *config) {
 	for _, task := range references {
 		task.SetCompletionTime(time.Time{})
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doReparent(tasks TaskList, task TaskNode, below TaskNode) {
+func doReparent(tasks TaskList, task TaskNode, below TaskNode, config *config) {
 	ReparentTask(task, below)
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doRemove(tasks TaskList, references []Task) {
+func doRemove(tasks TaskList, references []Task, config *config) {
 	for _, task := range references {
 		task.Delete()
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doPurge(tasks TaskList, age time.Duration) {
+func doPurge(tasks TaskList, age time.Duration, config *config) {
 	cutoff := time.Now().Add(-age)
 	matches := tasks.FindAll(func(task Task) bool {
 		return !task.CompletionTime().IsZero() && task.CompletionTime().Before(cutoff)
@@ -125,13 +124,13 @@ func doPurge(tasks TaskList, age time.Duration) {
 	for _, m := range matches {
 		m.Delete()
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doSetTitle(tasks TaskList, args []string) {
+func doSetTitle(tasks TaskList, args []string, config *config) {
 	title := strings.Join(args, " ")
 	tasks.SetTitle(title)
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
 func doShowInfo(tasks TaskList, index string) {
@@ -143,8 +142,7 @@ func doShowInfo(tasks TaskList, index string) {
 	view.ShowTaskInfo(task)
 }
 
-func processAction(tasks TaskList) {
-	config := GetConfigInstance()
+func processAction(tasks TaskList, config *config) {
 	priority := PriorityFromString(config.Priority)
 	var graft TaskNode = tasks // -golint
 	if config.Graft != "root" {
@@ -159,13 +157,13 @@ func processAction(tasks TaskList) {
 			fatalf("expected text for new task")
 		}
 		text := strings.Join(*taskText, " ")
-		doAdd(tasks, graft, priority, text)
+		doAdd(tasks, graft, priority, text, config)
 	case *markDoneFlag:
-		doMarkDone(tasks, resolveTaskReferences(tasks, *taskText))
+		doMarkDone(tasks, resolveTaskReferences(tasks, *taskText), config)
 	case *markNotDoneFlag:
-		doMarkNotDone(tasks, resolveTaskReferences(tasks, *taskText))
+		doMarkNotDone(tasks, resolveTaskReferences(tasks, *taskText), config)
 	case *removeFlag:
-		doRemove(tasks, resolveTaskReferences(tasks, *taskText))
+		doRemove(tasks, resolveTaskReferences(tasks, *taskText), config)
 	case *reparentFlag:
 		if len(*taskText) < 1 {
 			fatalf("expected <task> [<new-parent>] for reparenting")
@@ -176,9 +174,9 @@ func processAction(tasks TaskList) {
 		} else {
 			below = tasks
 		}
-		doReparent(tasks, resolveTaskReference(tasks, (*taskText)[0]), below)
+		doReparent(tasks, resolveTaskReference(tasks, (*taskText)[0]), below, config)
 	case *titleFlag:
-		doSetTitle(tasks, *taskText)
+		doSetTitle(tasks, *taskText, config)
 	case *infoFlag:
 		if len(*taskText) < 1 {
 			fatalf("expected <task> for info")
@@ -201,11 +199,11 @@ func processAction(tasks TaskList) {
 		if config.Priority == "" {
 			priority = -1
 		}
-		doEditTask(tasks, task, priority, text)
+		doEditTask(tasks, task, priority, text, config)
 	case *purgeFlag != -1*time.Second:
-		doPurge(tasks, *purgeFlag)
+		doPurge(tasks, *purgeFlag, config)
 	default:
-		doView(tasks)
+		doView(tasks, config)
 	}
 }
 
@@ -276,8 +274,7 @@ func resolveTaskReferences(tasks TaskList, indices []string) []Task {
 	return references
 }
 
-func loadTaskList() (tasks TaskList, err error) {
-	config := GetConfigInstance()
+func loadTaskList(config *config) (tasks TaskList, err error) {
 	// Try loading new-style task file
 	if file, err := os.Open(config.File); err == nil {
 		defer file.Close()
@@ -293,8 +290,7 @@ func loadTaskList() (tasks TaskList, err error) {
 	return nil, nil
 }
 
-func saveTaskList(tasks TaskList) {
-	config := GetConfigInstance()
+func saveTaskList(tasks TaskList, config *config) {
 	path := config.File
 	previous := path + "~"
 	temp := path + "~~"
@@ -325,7 +321,7 @@ func saveTaskList(tasks TaskList) {
 }
 
 func main() {
-	config := GetConfigInstance()
+	config := NewConfig()
 	marshalableConfig, err := loadConfigurationFile(config)
 	if marshalableConfig != nil {
 		copyToConfigFromMarshalableConfig(marshalableConfig, config)
@@ -335,12 +331,12 @@ func main() {
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
 	copyToConfigFromCMDOptions(config)
 
-	tasks, err := loadTaskList()
+	tasks, err := loadTaskList(config)
 	if err != nil {
 		fatalf("%s", err)
 	}
 	if tasks == nil {
 		tasks = NewTaskList()
 	}
-	processAction(tasks)
+	processAction(tasks, config)
 }

@@ -40,6 +40,14 @@ func NewViewOptions(showAll bool, summarise bool, order Order, reversed bool, fg
 	}
 }
 
+func (viewOptions *ViewOptions) GetBGColor(priority Priority) string {
+	return bgColourEnumMap[viewOptions.BGColors[priority]]
+}
+
+func (viewOptions *ViewOptions) GetFGColor(priority Priority) string {
+	return fgColourEnumMap[viewOptions.FGColors[priority]]
+}
+
 type View interface {
 	ShowTree(tasks TaskList, options *ViewOptions)
 	ShowTaskInfo(task Task)

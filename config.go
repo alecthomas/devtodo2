@@ -51,44 +51,34 @@ var colourPriorityMap = map[Priority]string{
 	VERYLOW:  FGBLUE,
 }
 
-func GetConfigInstance() *config {
-	once.Do(func() {
-		fgColors := map[Priority]string{
-			VERYLOW:  BLUE,
-			LOW:      CYAN,
-			MEDIUM:   WHITE,
-			HIGH:     BRIGHTYELLOW,
-			VERYHIGH: BRIGHTRED,
-		}
-		bgColors := map[Priority]string{
+func NewConfig() *config {
+	currentUser, err := user.Current()
+	configFile := ".todorc"
+	if err == nil {
+		configFile = strings.Join([]string{currentUser.HomeDir, configFile}, "/")
+	}
+	return &config{
+		BGColors: map[Priority]string{
 			VERYLOW:  NOCOLOR,
 			LOW:      NOCOLOR,
 			MEDIUM:   NOCOLOR,
 			HIGH:     NOCOLOR,
 			VERYHIGH: NOCOLOR,
-		}
-		priority := "medium"
-		graft := "root"
-		legacyFile := ".todo"
-		order := "priority"
-		currentUser, err := user.Current()
-		taskListFile := ".todo2"
-		configFile := ".todorc"
-		if err == nil {
-			configFile = strings.Join([]string{currentUser.HomeDir, configFile}, "/")
-		}
-		instance = &config{
-			BGColors:   bgColors,
-			FGColors:   fgColors,
-			Priority:   priority,
-			Graft:      graft,
-			File:       taskListFile,
-			LegacyFile: legacyFile,
-			Order:      order,
-			ConfigFile: configFile,
-		}
-	})
-	return instance
+		},
+		FGColors: map[Priority]string{
+			VERYLOW:  BLUE,
+			LOW:      CYAN,
+			MEDIUM:   WHITE,
+			HIGH:     BRIGHTYELLOW,
+			VERYHIGH: BRIGHTRED,
+		},
+		Priority:   "medium",
+		Graft:      "root",
+		File:       ".todo2",
+		LegacyFile: ".todo",
+		Order:      "priority",
+		ConfigFile: configFile,
+	}
 }
 
 type ConfigIO interface {

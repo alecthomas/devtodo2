@@ -176,7 +176,7 @@ func formatTask(width, depth int, task Task, options *ViewOptions) string {
 	indent := depth*4 + 4
 	width -= indent
 	state := taskState(task)
-	formattedTask.WriteString(fmt.Sprintf("%s%s%c%2d.%s%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state, task.ID()+1, RESET, fgColourEnumMap[options.FGColors[task.Priority()]], bgColourEnumMap[options.BGColors[task.Priority()]]))
+	formattedTask.WriteString(fmt.Sprintf("%s%s%c%2d.%s%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state, task.ID()+1, RESET, options.GetFGColor(task.Priority()), options.GetBGColor(task.Priority())))
 	text := task.Text()
 	trimmed := false
 	if options.Summarise {
