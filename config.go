@@ -18,9 +18,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
 	"os"
+	"os/user"
+	"strings"
 	"sync"
 )
 
@@ -67,16 +70,20 @@ func GetConfigInstance() *config {
 		}
 		priority := "medium"
 		graft := "root"
-		file := ".todo2"
 		legacyFile := ".todo"
 		order := "priority"
+		currentUser, err := user.Current()
+		taskListFile := ".todo2"
 		configFile := ".todorc"
+		if err == nil {
+			configFile = strings.Join([]string{currentUser.HomeDir, configFile}, "/")
+		}
 		instance = &config{
 			BGColors:   bgColors,
 			FGColors:   fgColors,
 			Priority:   priority,
 			Graft:      graft,
-			File:       file,
+			File:       taskListFile,
 			LegacyFile: legacyFile,
 			Order:      order,
 			ConfigFile: configFile,
