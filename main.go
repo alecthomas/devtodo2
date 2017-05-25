@@ -320,16 +320,15 @@ func saveTaskList(tasks TaskList, config *config) {
 	}
 }
 
-func main() {
-	config := NewConfig()
-	marshalableConfig, err := loadConfigurationFile(config)
-	if marshalableConfig != nil {
-		copyToConfigFromMarshalableConfig(marshalableConfig, config)
-	}
-
+func init() {
 	kingpin.CommandLine.Help = usage
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
-	copyToConfigFromCMDOptions(config)
+}
+
+func main() {
+	config := NewConfig()
+	err := loadConfigurationFile(&config)
+	loadConfigCMD(&config)
 
 	tasks, err := loadTaskList(config)
 	if err != nil {

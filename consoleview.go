@@ -158,7 +158,8 @@ func printWrappedText(text string, width, subsequentIndent int) string {
 	offset := 0
 	for i, token := range tokens {
 		if i > 0 && offset+len(token) > width {
-			wrappedText.WriteString(fmt.Sprintf("\n%s", strings.Repeat(" ", subsequentIndent)))
+			fmt.Fprintf(&wrappedText, "\n%s", strings.Repeat(" ", subsequentIndent))
+			//wrappedText.WriteString(fmt.Sprintf("\n%s", strings.Repeat(" ", subsequentIndent)))
 			offset = 0
 		}
 		wrappedText.WriteString(fmt.Sprintf("%s", token))

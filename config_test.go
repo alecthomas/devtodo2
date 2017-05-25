@@ -24,6 +24,10 @@ import (
 	"testing"
 )
 
+func TestSomethingRandom(t *testing.T) {
+
+}
+
 func TestLoadAllOptionsInCorrectOrderEspeciallyNonColorOptions(t *testing.T) {
 	var fail bytes.Buffer
 	config := GetConfigInstance()

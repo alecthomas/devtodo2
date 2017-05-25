@@ -23,12 +23,6 @@ import (
 	"os"
 	"os/user"
 	"strings"
-	"sync"
-)
-
-var (
-	instance *config
-	once     sync.Once
 )
 
 type config struct {
@@ -82,76 +76,39 @@ func NewConfig() *config {
 }
 
 type ConfigIO interface {
-	Deserialize(reader io.Reader) (*MarshalableConfig, error)
+	Deserialize(reader io.Reader) (*config, error)
 }
 
-type ConfigIOImpl struct {
-}
+type ConfigIOImpl struct{}
 
 func NewConfigIO() ConfigIO {
 	return ConfigIOImpl{}
 }
 
-type MarshalableConfig struct {
-	BGColors   map[string]string
-	FGColors   map[string]string
-	Priority   string
-	Graft      string
-	File       string
-	LegacyFile string
-	Order      string
+func (priority *Priority) Unmarshaler(bytes []byte) (err error) {
+	p := int(0)
+	if err = json.Unmarshal(bytes, &p); err == nil {
+		*priority = Priority(p)
+
+	}
+	return
 }
 
-func copyToConfigFromMarshalableConfig(marshalableConfig *MarshalableConfig, config *config) {
-	if marshalableConfig.Priority != "" {
-		config.Priority = marshalableConfig.Priority
-	}
-	if marshalableConfig.File != "" {
-		config.File = marshalableConfig.File
-	}
-	if marshalableConfig.Graft != "" {
-		config.Graft = marshalableConfig.Graft
-	}
-	if marshalableConfig.LegacyFile != "" {
-		config.LegacyFile = marshalableConfig.LegacyFile
-	}
-	if marshalableConfig.Order != "" {
-		config.Order = marshalableConfig.Order
-	}
-	if marshalableConfig.FGColors != nil {
-		fgColors := map[Priority]string{}
-		for key, value := range marshalableConfig.FGColors {
-			fgColors[priorityMapFromString[key]] = value
-		}
-		config.FGColors = fgColors
-	}
-	if marshalableConfig.BGColors != nil {
-		bgColors := map[Priority]string{}
-		for key, value := range marshalableConfig.BGColors {
-			bgColors[priorityMapFromString[key]] = value
-		}
-		config.BGColors = bgColors
-	}
-}
-
-func (configIOImpl ConfigIOImpl) Deserialize(reader io.Reader) (marshalableConfig *MarshalableConfig, err error) {
-	decoder := json.NewDecoder(reader)
-	marshalableConfig = &MarshalableConfig{}
-	err = decoder.Decode(marshalableConfig)
-	return marshalableConfig, err
-}
-
-func loadConfigurationFile(config *config) (marshalableConfig *MarshalableConfig, err error) {
-	if file, err := os.Open(config.ConfigFile); err == nil {
+func loadConfigurationFile(config *config) (err error) {
+	if file, err := os.Open(".todorc"); err == nil {
 		defer file.Close()
 		configIO := NewConfigIO()
-		return configIO.Deserialize(file)
+		decoder := json.NewDecoder(file)
+		decodeErr = decoder.Decode(&config)
+		if decodeErr != nil {
+			return decodeErr
+		}
 	}
-	return nil, err
+	return
 }
 
-func copyToConfigFromCMDOptions(config *config) {
-	kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').EnumVar(&config.Priority, "veryhigh", "high", "medium", "low", "verylow")
+func loadConfigCMD(config *config) {
+	kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').EnumVar(&config.Priority, veryhigh, high, medium, low, verylow)
 	kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").StringVar(&config.Graft)
 	kingpin.Flag("file", "File to load task lists from.").StringVar(&config.File)
 	kingpin.Flag("legacy-file", "File to load legacy task lists from.").StringVar(&config.LegacyFile)
@@ -159,16 +116,16 @@ func copyToConfigFromCMDOptions(config *config) {
 
 	colors := []string{WHITE, BLUE, RED, CYAN, GREEN, YELLOW, BLACK, MAGENTA, BRIGHTWHITE, BRIGHTBLUE, BRIGHTRED, BRIGHTCYAN, BRIGHTGREEN, BRIGHTYELLOW, BRIGHTBLACK, BRIGHTMAGENTA, NOCOLOR}
 
-	var veryLowFGColor = kingpin.Flag("verylowfgcolor", "Very low priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
-	var lowFGColor = kingpin.Flag("lowfgcolor", "Low priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
-	var mediumFGColor = kingpin.Flag("mediumfgcolor", "Medium priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
-	var highFGColor = kingpin.Flag("highfgcolor", "High priority task texts foreground color.").Default(NOCOLOR).Enum(colors...)
-	var veryHighFGColor = kingpin.Flag("veryhighfgcolor", "Very high task texts foreground color.").Default(NOCOLOR).Enum(colors...)
-	var veryLowBGColor = kingpin.Flag("verylowbgcolor", "Very low priority task texts background color.").Default(NOCOLOR).Enum(colors...)
-	var lowBGColor = kingpin.Flag("lowbgcolor", "Low priority task texts background color.").Default(NOCOLOR).Enum(colors...)
-	var mediumBGColor = kingpin.Flag("mediumbgcolor", "Medium priority task texts background color.").Default(NOCOLOR).Enum(colors...)
-	var highBGColor = kingpin.Flag("highbgcolor", "High priority task texts background color.").Default(NOCOLOR).Enum(colors...)
-	var veryHighBGColor = kingpin.Flag("veryhighbgcolor", "Very high priority task texts background color.").Default(NOCOLOR).Enum(colors...)
+	var veryLowFGColor = kingpin.Flag("verylowfgcolor", "Very low priority task texts foreground color.").Enum(colors...)
+	var lowFGColor = kingpin.Flag("lowfgcolor", "Low priority task texts foreground color.").Enum(colors...)
+	var mediumFGColor = kingpin.Flag("mediumfgcolor", "Medium priority task texts foreground color.").Enum(colors...)
+	var highFGColor = kingpin.Flag("highfgcolor", "High priority task texts foreground color.").Enum(colors...)
+	var veryHighFGColor = kingpin.Flag("veryhighfgcolor", "Very high task texts foreground color.").Enum(colors...)
+	var veryLowBGColor = kingpin.Flag("verylowbgcolor", "Very low priority task texts background color.").Enum(colors...)
+	var lowBGColor = kingpin.Flag("lowbgcolor", "Low priority task texts background color.").Enum(colors...)
+	var mediumBGColor = kingpin.Flag("mediumbgcolor", "Medium priority task texts background color.").Enum(colors...)
+	var highBGColor = kingpin.Flag("highbgcolor", "High priority task texts background color.").Enum(colors...)
+	var veryHighBGColor = kingpin.Flag("veryhighbgcolor", "Very high priority task texts background color.").Enum(colors...)
 	kingpin.Parse()
 
 	if *veryLowFGColor != NOCOLOR {
@@ -210,4 +167,5 @@ func copyToConfigFromCMDOptions(config *config) {
 	if *veryHighBGColor != NOCOLOR {
 		config.BGColors[priorityMapFromString[veryhigh]] = *veryHighBGColor
 	}
+
 }
