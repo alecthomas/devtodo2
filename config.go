@@ -70,16 +70,12 @@ func (priority *Priority) UnmarshalText(data []byte) error {
 	return nil
 }
 
-func loadConfigurationFile(config *config) (err error) {
+func loadConfigurationFile(config *config) {
 	if file, err := os.Open(config.ConfigFile); err == nil {
 		defer file.Close()
 		decoder := json.NewDecoder(file)
-		decodeErr := decoder.Decode(&config)
-		if decodeErr != nil {
-			return decodeErr
-		}
+		decoder.Decode(&config)
 	}
-	return
 }
 
 func loadConfigCMD(config *config) {

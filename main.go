@@ -327,7 +327,7 @@ func init() {
 
 func main() {
 	config := NewConfig()
-	err := loadConfigurationFile(config)
+	loadConfigurationFile(config)
 	loadConfigCMD(config)
 
 	tasks, err := loadTaskList(config)
