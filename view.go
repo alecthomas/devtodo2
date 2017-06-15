@@ -50,7 +50,7 @@ func (viewOptions *ViewOptions) GetFGColor(priority Priority) string {
 
 type View interface {
 	ShowTree(tasks TaskList, options *ViewOptions)
-	ShowTaskInfo(task Task)
+	ShowTaskInfo(task Task, options *ViewOptions)
 }
 
 // TaskView is a filtered, ordered view of a Tasks children.

@@ -229,12 +229,12 @@ func (c *ConsoleView) ShowTree(tasks TaskList, options *ViewOptions) {
 	}
 }
 
-func (c *ConsoleView) ShowTaskInfo(task Task) {
+func (c *ConsoleView) ShowTaskInfo(task Task, options *ViewOptions) {
 	width := getTerminalWidth()
-	fmt.Print(colourPriorityMap[task.Priority()])
+	fmt.Print(options.GetFGColor(task.Priority()))
 	printWrappedText(task.Text(), width, 0)
 	fmt.Printf("%s\n\n", RESET)
-	fmt.Printf("%sPriority%s %s%s%s\n", BRIGHT, RESET, colourPriorityMap[task.Priority()], task.Priority().String(), RESET)
+	fmt.Printf("%sPriority%s %s%s%s\n", BRIGHT, RESET, options.GetFGColor(task.Priority()), task.Priority().String(), RESET)
 	fmt.Printf("%sCreated:%s %s\n", BRIGHT, RESET, task.CreationTime().Local().String())
 	completed := "incomplete"
 	if !task.CompletionTime().IsZero() {

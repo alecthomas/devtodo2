@@ -68,9 +68,7 @@ var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short(
 var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
 
-func doView(tasks TaskList, config *config) {
-	order, reversed := OrderFromString(config.Order)
-	options := NewViewOptions(*allFlag, *summaryFlag, order, reversed, config.FGColors, config.BGColors)
+func doView(tasks TaskList, options *ViewOptions) {
 	view := NewConsoleView()
 	view.ShowTree(tasks, options)
 }
@@ -133,13 +131,13 @@ func doSetTitle(tasks TaskList, args []string, config *config) {
 	saveTaskList(tasks, config)
 }
 
-func doShowInfo(tasks TaskList, index string) {
+func doShowInfo(tasks TaskList, index string, options *ViewOptions) {
 	task := tasks.Find(index)
 	if task == nil {
 		fatalf("no such task %s", index)
 	}
 	view := NewConsoleView()
-	view.ShowTaskInfo(task)
+	view.ShowTaskInfo(task, options)
 }
 
 func processAction(tasks TaskList, config *config) {
@@ -150,6 +148,8 @@ func processAction(tasks TaskList, config *config) {
 			fatalf("invalid graft index '%s'", config.Graft)
 		}
 	}
+	order, reversed := OrderFromString(config.Order)
+	options := NewViewOptions(*allFlag, *summaryFlag, order, reversed, config.FGColors, config.BGColors)
 
 	switch {
 	case *addFlag:
@@ -181,7 +181,7 @@ func processAction(tasks TaskList, config *config) {
 		if len(*taskText) < 1 {
 			fatalf("expected <task> for info")
 		}
-		doShowInfo(tasks, (*taskText)[0])
+		doShowInfo(tasks, (*taskText)[0], options)
 	case *importFlag:
 		if len(*taskText) < 1 {
 			fatalf("expected list of files to import")
@@ -203,7 +203,7 @@ func processAction(tasks TaskList, config *config) {
 	case *purgeFlag != -1*time.Second:
 		doPurge(tasks, *purgeFlag, config)
 	default:
-		doView(tasks, config)
+		doView(tasks, options)
 	}
 }
 
@@ -327,8 +327,8 @@ func init() {
 
 func main() {
 	config := NewConfig()
-	err := loadConfigurationFile(&config)
-	loadConfigCMD(&config)
+	err := loadConfigurationFile(config)
+	loadConfigCMD(config)
 
 	tasks, err := loadTaskList(config)
 	if err != nil {
