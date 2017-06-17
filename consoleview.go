@@ -1,4 +1,5 @@
 /*
+
   Copyright 2011 Alec Thomas
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -174,10 +175,11 @@ func printWrappedText(text string, width, subsequentIndent int) string {
 
 func formatTask(width, depth int, task Task, options *ViewOptions) string {
 	var formattedTask bytes.Buffer
+
 	indent := depth*4 + 4
 	width -= indent
 	state := taskState(task)
-	formattedTask.WriteString(fmt.Sprintf("%s%s%c%2d.%s%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state, task.ID()+1, RESET, options.GetFGColor(task.Priority()), options.GetBGColor(task.Priority())))
+	fmt.Fprintf(&formattedTask, "%s%s%c%2d.%s%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state, task.ID()+1, RESET, options.GetFGColor(task.Priority()), options.GetBGColor(task.Priority()))
 	text := task.Text()
 	trimmed := false
 	if options.Summarise {
@@ -188,9 +190,10 @@ func formatTask(width, depth int, task Task, options *ViewOptions) string {
 	}
 	formattedTask.WriteString(printWrappedText(text, width, indent))
 	if trimmed {
-		formattedTask.WriteString(fmt.Sprintf("%s+%s\n", TITLE_COLOUR, RESET))
+		fmt.Fprintf(&formattedTask, "%s+%s\n", TITLE_COLOUR, RESET)
+
 	} else {
-		formattedTask.WriteString(fmt.Sprintf("%s\n", RESET))
+		fmt.Fprintf(&formattedTask, fmt.Sprintf("%s\n", RESET))
 	}
 	return formattedTask.String()
 }

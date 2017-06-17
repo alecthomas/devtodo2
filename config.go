@@ -18,7 +18,6 @@ package main
 
 import (
 	"encoding/json"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"os/user"
 	"strings"
@@ -74,37 +73,6 @@ func loadConfigurationFile(config *config) {
 	if file, err := os.Open(config.ConfigFile); err == nil {
 		defer file.Close()
 		decoder := json.NewDecoder(file)
-		decoder.Decode(&config)
+		decoder.Decode(config)
 	}
-}
-
-func loadConfigCMD(config *config) {
-	colors := []string{WHITE, BLUE, RED, CYAN, GREEN, YELLOW, BLACK, MAGENTA, BRIGHTWHITE, BRIGHTBLUE, BRIGHTRED, BRIGHTCYAN, BRIGHTGREEN, BRIGHTYELLOW, BRIGHTBLACK, BRIGHTMAGENTA, NOCOLOR}
-	kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').EnumVar(&config.Priority, veryhigh, high, medium, low, verylow)
-	kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").StringVar(&config.Graft)
-	kingpin.Flag("file", "File to load task lists from.").StringVar(&config.File)
-	kingpin.Flag("legacy-file", "File to load legacy task lists from.").StringVar(&config.LegacyFile)
-	kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done).").EnumVar(&config.Order, "index", "created", "completed", "text", "priority", "duration", "done")
-
-	fgColorVeryLow := kingpin.Flag("verylowfgcolor", "Very low priority task texts foreground color.").Default(config.FGColors[priorityMapFromString[verylow]]).Enum(colors...)
-	fgColorLow := kingpin.Flag("lowfgcolor", "Low priority task texts foreground color.").Default(config.FGColors[priorityMapFromString[low]]).Enum(colors...)
-	fgColorMedium := kingpin.Flag("mediumfgcolor", "Medium priority task texts foreground color.").Default(config.FGColors[priorityMapFromString[medium]]).Enum(colors...)
-	fgColorHigh := kingpin.Flag("highfgcolor", "High priority task texts foreground color.").Default(config.FGColors[priorityMapFromString[high]]).Enum(colors...)
-	fgColorVeryHigh := kingpin.Flag("veryhighfgcolor", "Very high task texts foreground color.").Default(config.FGColors[priorityMapFromString[veryhigh]]).Enum(colors...)
-	bgColorVeryLow := kingpin.Flag("verylowbgcolor", "Very low priority task texts background color.").Default(config.BGColors[priorityMapFromString[verylow]]).Enum(colors...)
-	bgColorLow := kingpin.Flag("lowbgcolor", "Low priority task texts background color.").Default(config.BGColors[priorityMapFromString[low]]).Enum(colors...)
-	bgColorMedium := kingpin.Flag("mediumbgcolor", "Medium priority task texts background color.").Default(config.BGColors[priorityMapFromString[medium]]).Enum(colors...)
-	bgColorHigh := kingpin.Flag("highbgcolor", "High priority task texts background color.").Default(config.BGColors[priorityMapFromString[high]]).Enum(colors...)
-	bgColorVeryHigh := kingpin.Flag("veryhighbgcolor", "Very high priority task texts background color.").Default(config.BGColors[priorityMapFromString[veryhigh]]).Enum(colors...)
-	kingpin.Parse()
-	config.FGColors[priorityMapFromString[verylow]] = *fgColorVeryLow
-	config.FGColors[priorityMapFromString[low]] = *fgColorLow
-	config.FGColors[priorityMapFromString[medium]] = *fgColorMedium
-	config.FGColors[priorityMapFromString[high]] = *fgColorHigh
-	config.FGColors[priorityMapFromString[veryhigh]] = *fgColorVeryHigh
-	config.BGColors[priorityMapFromString[verylow]] = *bgColorVeryLow
-	config.BGColors[priorityMapFromString[low]] = *bgColorLow
-	config.BGColors[priorityMapFromString[medium]] = *bgColorMedium
-	config.BGColors[priorityMapFromString[high]] = *bgColorHigh
-	config.BGColors[priorityMapFromString[veryhigh]] = *bgColorVeryHigh
 }

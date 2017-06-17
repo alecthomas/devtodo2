@@ -325,6 +325,17 @@ func init() {
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
 }
 
+func loadConfigCMD(config *config) {
+	kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').EnumVar(&config.Priority, veryhigh, high, medium, low, verylow)
+	kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").StringVar(&config.Graft)
+	kingpin.Flag("file", "File to load task lists from.").StringVar(&config.File)
+	kingpin.Flag("legacy-file", "File to load legacy task lists from.").StringVar(&config.LegacyFile)
+	kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done).").EnumVar(&config.Order, "index", "created", "completed", "text", "priority", "duration", "done")
+
+	kingpin.Parse()
+
+}
+
 func main() {
 	config := NewConfig()
 	loadConfigurationFile(config)
