@@ -20,193 +20,228 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 )
 
-func TestLoadAllOptionsInCorrectOrderPrimarilyCMDLineOptions(t *testing.T) {
-	var fail bytes.Buffer
-	config := NewConfig()
-	os.Args = []string{"devtodo2", "-A"}
+const (
+	expectedAndActualFormat = "Expected: %s, Got: %s \n"
+)
 
-	loadConfigCMD(config)
-
-	if config.Priority != medium {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.Priority Expected:%s , Got: %s \n", medium, config.Priority))
-		t.Fail()
-	}
-	if config.Graft != "root" {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.Graft Expected:%s , Got: %s \n", "root", config.Graft))
-		t.Fail()
-	}
-	if config.File != ".todo2" {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.File Expected:%s , Got: %s \n", ".todo2", config.File))
-		t.Fail()
-	}
-
-	veryLowFGColorFromConfig := config.FGColors[PriorityFromString(verylow)]
-	expectedVeryLowFGColorFromConfig := BLUE
-	if veryLowFGColorFromConfig != expectedVeryLowFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.verylow Expected:%s , Got: %s \n", expectedVeryLowFGColorFromConfig, veryLowFGColorFromConfig))
-		t.Fail()
-	}
-
-	lowFGColorFromConfig := config.FGColors[PriorityFromString(low)]
-	expectedLowFGColorFromConfig := CYAN
-	if lowFGColorFromConfig != expectedLowFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n hmm? Err at config_test.go: config.FGColors.low Expected:%s , Got: %s \n", expectedLowFGColorFromConfig, lowFGColorFromConfig))
-		t.Fail()
-	}
-
-	mediumFGColorFromConfig := config.FGColors[PriorityFromString(medium)]
-	expectedMediumFGColorFromConfig := WHITE
-	if mediumFGColorFromConfig != expectedMediumFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.medium Expected:%s , Got: %s \n", expectedMediumFGColorFromConfig, mediumFGColorFromConfig))
-		t.Fail()
-	}
-
-	highFGColorFromConfig := config.FGColors[PriorityFromString(high)]
-	expectedHighFGColorFromConfig := BRIGHTYELLOW
-	if highFGColorFromConfig != expectedHighFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.high  Expected:%s , Got: %s \n", expectedHighFGColorFromConfig, highFGColorFromConfig))
-		t.Fail()
-	}
-
-	veryHighFGColorFromConfig := config.FGColors[PriorityFromString(veryhigh)]
-	expectedVeryHighFGColorFromConfig := BRIGHTRED
-	if veryHighFGColorFromConfig != expectedVeryHighFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.veryhigh  Expected:%s , Got: %s \n", expectedVeryHighFGColorFromConfig, highFGColorFromConfig))
-		t.Fail()
-	}
-
-	veryLowBGColorFromConfig := config.BGColors[PriorityFromString(verylow)]
-	expectedVeryLowBGColorFromConfig := NOCOLOR
-	if veryLowBGColorFromConfig != expectedVeryLowBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.verylow  Expected:%s , Got: %s \n", expectedVeryLowBGColorFromConfig, veryLowBGColorFromConfig))
-		t.Fail()
-	}
-
-	lowBGColorFromConfig := config.BGColors[PriorityFromString(low)]
-	expectedLowBGColorFromConfig := NOCOLOR
-	if lowBGColorFromConfig != expectedLowBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.low  Expected:%s , Got: %s \n", expectedLowBGColorFromConfig, lowBGColorFromConfig))
-		t.Fail()
-	}
-
-	mediumBGColorFromConfig := config.BGColors[PriorityFromString(medium)]
-	expectedMediumBGColorFromConfig := NOCOLOR
-	if mediumBGColorFromConfig != expectedMediumBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.medium  Expected:%s , Got: %s \n", expectedMediumBGColorFromConfig, mediumBGColorFromConfig))
-		t.Fail()
-	}
-
-	highBGColorFromConfig := config.BGColors[PriorityFromString(high)]
-	expectedHighBGColorFromConfig := NOCOLOR
-	if highBGColorFromConfig != expectedHighBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.high  Expected:%s , Got: %s \n", expectedHighBGColorFromConfig, highBGColorFromConfig))
-		t.Fail()
-	}
-
-	veryHighBGColorFromConfig := config.BGColors[PriorityFromString(veryhigh)]
-	expectedVeryHighBGColorFromConfig := NOCOLOR
-	if veryHighBGColorFromConfig != expectedVeryHighBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.veryhigh  Expected:%s , Got: %s \n", expectedVeryHighBGColorFromConfig, veryHighBGColorFromConfig))
-		t.Fail()
-	}
-
-	fmt.Println(fail.String())
+func FileAndTestName(t *testing.T) string {
+	var basisErrMessage bytes.Buffer
+	privateFields := reflect.ValueOf(*t)
+	testName := privateFields.FieldByName("name")
+	fmt.Fprintf(&basisErrMessage, "Error at config_test.go:%s. ", testName)
+	return basisErrMessage.String()
 }
 
-func TestLoadAllOptionsInCorrectOrderPrimarilyConfigurationFileOptions(t *testing.T) {
-	var fail bytes.Buffer
+func TestDefaultLegacyFile(t *testing.T) {
 	config := NewConfig()
-
-	priority := veryhigh
-	os.Args = []string{"devtodo2", "-p", priority, "-a", "Test task name whatever."}
-
-	loadConfigCMD(config)
-
-	if config.Priority != priority {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.Priority Expected:%s , Got: %s \n", priority, config.Priority))
+	expected := ".todo"
+	actual := config.LegacyFile
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
-	if config.Graft != "root" {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.Graft Expected:%s , Got: %s \n", "root", config.Graft))
-		t.Fail()
-	}
-	if config.File != ".todo2" {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.File Expected:%s , Got: %s \n", ".todo2", config.File))
-		t.Fail()
-	}
+}
 
-	veryLowFGColorFromConfig := config.FGColors[PriorityFromString(verylow)]
-	expectedVeryLowFGColorFromConfig := BLUE
-	if veryLowFGColorFromConfig != expectedVeryLowFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.verylow Expected:%s , Got: %s \n", expectedVeryLowFGColorFromConfig, veryLowFGColorFromConfig))
+func TestOverrideLegacyFile(t *testing.T) {
+	config := NewConfig()
+	expected := ".testlegacyfile"
+	os.Args = []string{"devtodo2", "--legacy-file", expected, "-A"}
+	loadCLIConfig(config)
+	actual := config.LegacyFile
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	lowFGColorFromConfig := config.FGColors[PriorityFromString(low)]
-	expectedLowFGColorFromConfig := CYAN
-	if lowFGColorFromConfig != expectedLowFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.low Expected:%s , Got: %s \n", expectedLowFGColorFromConfig, lowFGColorFromConfig))
+func TestDefaultOrder(t *testing.T) {
+	config := NewConfig()
+	expected := "priority"
+	actual := config.Order
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	mediumFGColorFromConfig := config.FGColors[PriorityFromString(medium)]
-	expectedMediumFGColorFromConfig := WHITE
-	if mediumFGColorFromConfig != expectedMediumFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.medium Expected:%s , Got: %s \n", expectedMediumFGColorFromConfig, mediumFGColorFromConfig))
+func TestOverrideOrder(t *testing.T) {
+	config := NewConfig()
+	expected := orderToString[CREATED]
+	os.Args = []string{"devtodo2", "--order", expected, "-A"}
+	loadCLIConfig(config)
+	actual := config.Order
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	highFGColorFromConfig := config.FGColors[PriorityFromString(high)]
-	expectedHighFGColorFromConfig := BRIGHTYELLOW
-	if highFGColorFromConfig != expectedHighFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.high  Expected:%s , Got: %s \n", expectedHighFGColorFromConfig, highFGColorFromConfig))
+func TestDefaultPriority(t *testing.T) {
+	config := NewConfig()
+	expected := medium
+	actual := config.Priority
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	veryHighFGColorFromConfig := config.FGColors[PriorityFromString(veryhigh)]
-	expectedVeryHighFGColorFromConfig := BRIGHTRED
-	if veryHighFGColorFromConfig != expectedVeryHighFGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.FGColors.veryhigh  Expected:%s , Got: %s \n", expectedVeryHighFGColorFromConfig, highFGColorFromConfig))
+func TestOverridePriority(t *testing.T) {
+	config := NewConfig()
+	expected := high
+	os.Args = []string{"devtodo2", "-p", expected, "-a", "Test task text"}
+	loadCLIConfig(config)
+	actual := config.Priority
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	veryLowBGColorFromConfig := config.BGColors[PriorityFromString(verylow)]
-	expectedVeryLowBGColorFromConfig := NOCOLOR
-	if veryLowBGColorFromConfig != expectedVeryLowBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.verylow  Expected:%s , Got: %s \n", expectedVeryLowBGColorFromConfig, veryLowBGColorFromConfig))
+func TestDefaultGraft(t *testing.T) {
+	config := NewConfig()
+	expected := "root"
+	actual := config.Graft
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	lowBGColorFromConfig := config.BGColors[PriorityFromString(low)]
-	expectedLowBGColorFromConfig := NOCOLOR
-	if lowBGColorFromConfig != expectedLowBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.low  Expected:%s , Got: %s \n", expectedLowBGColorFromConfig, lowBGColorFromConfig))
+func TestOverrideGraft(t *testing.T) {
+	config := NewConfig()
+	expected := "1"
+	os.Args = []string{"devtodo2", "-g", expected, "-a", "Test task test"}
+	loadCLIConfig(config)
+	actual := config.Graft
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	mediumBGColorFromConfig := config.BGColors[PriorityFromString(medium)]
-	expectedMediumBGColorFromConfig := NOCOLOR
-	if mediumBGColorFromConfig != expectedMediumBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.medium  Expected:%s , Got: %s \n", expectedMediumBGColorFromConfig, mediumBGColorFromConfig))
+func TestDefaultFile(t *testing.T) {
+	config := NewConfig()
+	expected := ".todo2"
+	actual := config.File
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	highBGColorFromConfig := config.BGColors[PriorityFromString(high)]
-	expectedHighBGColorFromConfig := NOCOLOR
-	if highBGColorFromConfig != expectedHighBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n herpderp Err at config_test.go: config.BGColors.high  Expected:%s , Got: %s \n", expectedHighBGColorFromConfig, highBGColorFromConfig))
+func TestOverrideFile(t *testing.T) {
+	config := NewConfig()
+	expected := ".testtodo"
+	os.Args = []string{"devtodo2", "--file", expected, "-A"}
+	loadCLIConfig(config)
+	actual := config.File
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	veryHighBGColorFromConfig := config.BGColors[PriorityFromString(veryhigh)]
-	expectedVeryHighBGColorFromConfig := NOCOLOR
-	if veryHighBGColorFromConfig != expectedVeryHighBGColorFromConfig {
-		fail.WriteString(fmt.Sprintf("\n Err at config_test.go: config.BGColors.veryhigh  Expected:%s , Got: %s \n", expectedVeryHighBGColorFromConfig, veryHighBGColorFromConfig))
+func TestDefaultVeryLowPriorityFGColor(t *testing.T) {
+	config := NewConfig()
+	expected := BLUE
+	actual := config.FGColors[VERYLOW]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
 		t.Fail()
 	}
+}
 
-	fmt.Println(fail.String())
+func TestDefaultLowPriorityFGColor(t *testing.T) {
+	config := NewConfig()
+	expected := CYAN
+	actual := config.FGColors[LOW]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
+}
+
+func TestDefaultMediumPriorityFGColor(t *testing.T) {
+	config := NewConfig()
+	expected := WHITE
+	actual := config.FGColors[MEDIUM]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
+}
+
+func TestDefaultHighPriorityFGColor(t *testing.T) {
+	config := NewConfig()
+	expected := BRIGHTYELLOW
+	actual := config.FGColors[HIGH]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
+}
+
+func TestDefaultVeryHighPriorityFGColor(t *testing.T) {
+	config := NewConfig()
+	expected := BRIGHTRED
+	actual := config.FGColors[VERYHIGH]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
+}
+
+func TestDefaultVeryHighPriorityBGColor(t *testing.T) {
+	config := NewConfig()
+	expected := NOCOLOR
+	actual := config.BGColors[VERYHIGH]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
+}
+
+func TestDefaultHighPriorityBGColor(t *testing.T) {
+	config := NewConfig()
+	expected := NOCOLOR
+	actual := config.BGColors[HIGH]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
+}
+
+func TestDefaultMediumPriorityBGColor(t *testing.T) {
+	config := NewConfig()
+	expected := NOCOLOR
+	actual := config.BGColors[MEDIUM]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
+}
+
+func TestDefaultLowPriorityBGColor(t *testing.T) {
+	config := NewConfig()
+	expected := NOCOLOR
+	actual := config.BGColors[LOW]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
+}
+
+func TestDefaultVeryLowPriorityBGColor(t *testing.T) {
+	config := NewConfig()
+	expected := NOCOLOR
+	actual := config.BGColors[VERYLOW]
+	if actual != expected {
+		fmt.Printf(FileAndTestName(t)+expectedAndActualFormat, expected, actual)
+		t.Fail()
+	}
 }
