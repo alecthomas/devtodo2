@@ -208,7 +208,8 @@ func processAction(tasks TaskList) {
 		if task == nil {
 			fatalf("invalid task %s", (*taskText)[0])
 		}
-		text := strings.Join(*taskText, " ")
+		text := strings.Join((*taskText)[1:], " ")
+		//text := strings.Join(*taskText, " ")
 		if *priorityFlag == "" {
 			priority = -1
 		}
