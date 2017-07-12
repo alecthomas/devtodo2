@@ -25,11 +25,32 @@ type ViewOptions struct {
 	Reversed  bool
 	Summarise bool
 	ShowAll   bool
+	FGColors  map[Priority]string
+	BGColors  map[Priority]string
+}
+
+func NewViewOptions(showAll bool, summarise bool, order Order, reversed bool, fgColors map[Priority]string, bgColors map[Priority]string) *ViewOptions {
+	return &ViewOptions{
+		ShowAll:   showAll,
+		Summarise: summarise,
+		Order:     order,
+		Reversed:  reversed,
+		FGColors:  fgColors,
+		BGColors:  bgColors,
+	}
+}
+
+func (viewOptions *ViewOptions) GetBGColor(priority Priority) string {
+	return bgColourEnumMap[viewOptions.BGColors[priority]]
+}
+
+func (viewOptions *ViewOptions) GetFGColor(priority Priority) string {
+	return fgColourEnumMap[viewOptions.FGColors[priority]]
 }
 
 type View interface {
 	ShowTree(tasks TaskList, options *ViewOptions)
-	ShowTaskInfo(task Task)
+	ShowTaskInfo(task Task, options *ViewOptions)
 }
 
 // TaskView is a filtered, ordered view of a Tasks children.

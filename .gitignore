@@ -1,3 +1,6 @@
 todo2
 todo2.1
 .todo2~
+.todorc
+*.swp
+devtodo2

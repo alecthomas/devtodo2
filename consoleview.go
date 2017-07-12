@@ -1,4 +1,5 @@
 /*
+
   Copyright 2011 Alec Thomas
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +18,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -24,8 +26,8 @@ import (
 	"unsafe"
 )
 
-// ANSI color constants.
 const (
+	// ANSI color constants.
 	RESET      = "\x1b[0m"
 	BRIGHT     = "\x1b[1m"
 	DIM        = "\x1b[2m"
@@ -52,15 +54,75 @@ const (
 
 	TITLE_COLOUR = BRIGHT + FGGREEN
 	NUMBER_COLOR = FGGREEN
+
+	//color constants
+	BLACK         = "BLACK"
+	RED           = "RED"
+	GREEN         = "GREEN"
+	YELLOW        = "YELLOW"
+	BLUE          = "BLUE"
+	MAGENTA       = "MAGENTA"
+	CYAN          = "CYAN"
+	WHITE         = "WHITE"
+	BRIGHTBLACK   = "BRIGHTBLACK"
+	BRIGHTRED     = "BRIGHTRED"
+	BRIGHTGREEN   = "BRIGHTGREEN"
+	BRIGHTYELLOW  = "BRIGHTYELLOW"
+	BRIGHTBLUE    = "BRIGHTBLUE"
+	BRIGHTMAGENTA = "BRIGHTMAGENTA"
+	BRIGHTCYAN    = "BRIGHTCYAN"
+	BRIGHTWHITE   = "BRIGHTWHITE"
+	NOCOLOR       = ""
 )
 
-// Map for priority level to ANSI colour
-var colourPriorityMap = map[Priority]string{
-	VERYHIGH: BRIGHT + FGRED,
-	HIGH:     BRIGHT + FGYELLOW,
-	MEDIUM:   FGWHITE,
-	LOW:      FGCYAN,
-	VERYLOW:  FGBLUE,
+var standardAnsiCodeMap = map[string]string{
+	"RESET":        RESET,
+	"BRIGHT":       BRIGHT,
+	"DIM":          DIM,
+	"UNDERSCORE":   UNDERSCORE,
+	"BLINK":        BLINK,
+	"REVERSE":      REVERSE,
+	"HIDDEN":       HIDDEN,
+	"TITLE_COLOUR": BRIGHT + FGGREEN,
+	"NUMBER_COLOR": FGGREEN,
+}
+
+var fgColourEnumMap = map[string]string{
+	BLACK:         FGBLACK,
+	RED:           FGRED,
+	GREEN:         FGGREEN,
+	YELLOW:        FGYELLOW,
+	BLUE:          FGBLUE,
+	MAGENTA:       FGMAGENTA,
+	CYAN:          FGCYAN,
+	WHITE:         FGWHITE,
+	BRIGHTBLACK:   BRIGHT + FGBLACK,
+	BRIGHTRED:     BRIGHT + FGRED,
+	BRIGHTGREEN:   BRIGHT + FGGREEN,
+	BRIGHTYELLOW:  BRIGHT + FGYELLOW,
+	BRIGHTBLUE:    BRIGHT + FGBLUE,
+	BRIGHTMAGENTA: BRIGHT + FGMAGENTA,
+	BRIGHTCYAN:    BRIGHT + FGCYAN,
+	BRIGHTWHITE:   BRIGHT + FGWHITE,
+}
+
+var bgColourEnumMap = map[string]string{
+	BLACK:         BGBLACK,
+	RED:           BGRED,
+	GREEN:         BGGREEN,
+	YELLOW:        BGYELLOW,
+	BLUE:          BGBLUE,
+	MAGENTA:       BGMAGENTA,
+	CYAN:          BGCYAN,
+	WHITE:         BGWHITE,
+	BRIGHTBLACK:   BRIGHT + BGBLACK,
+	BRIGHTRED:     BRIGHT + BGRED,
+	BRIGHTGREEN:   BRIGHT + BGGREEN,
+	BRIGHTYELLOW:  BRIGHT + BGYELLOW,
+	BRIGHTBLUE:    BRIGHT + BGBLUE,
+	BRIGHTMAGENTA: BRIGHT + BGMAGENTA,
+	BRIGHTCYAN:    BRIGHT + BGCYAN,
+	BRIGHTWHITE:   BRIGHT + BGWHITE,
 }
 
 func getTerminalWidth() int {
@@ -91,29 +153,33 @@ func fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func printWrappedText(text string, width, subsequentIndent int) {
+func printWrappedText(text string, width, subsequentIndent int) string {
+	var wrappedText bytes.Buffer
 	tokens := strings.Split(text, " ")
 	offset := 0
 	for i, token := range tokens {
 		if i > 0 && offset+len(token) > width {
-			fmt.Printf("\n%s", strings.Repeat(" ", subsequentIndent))
+			fmt.Fprintf(&wrappedText, "\n%s", strings.Repeat(" ", subsequentIndent))
+			//wrappedText.WriteString(fmt.Sprintf("\n%s", strings.Repeat(" ", subsequentIndent)))
 			offset = 0
 		}
-		fmt.Printf("%s", token)
+		wrappedText.WriteString(fmt.Sprintf("%s", token))
 		offset += len(token)
 		if offset < width && i != len(tokens)-1 {
-			fmt.Print(" ")
+			wrappedText.WriteString(fmt.Sprint(" "))
 			offset++
 		}
 	}
+	return wrappedText.String()
 }
 
-func formatTask(width, depth int, task Task, options *ViewOptions) {
+func formatTask(width, depth int, task Task, options *ViewOptions) string {
+	var formattedTask bytes.Buffer
+
 	indent := depth*4 + 4
 	width -= indent
 	state := taskState(task)
-	fmt.Printf("%s%s%c%2d.%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state,
-		task.ID()+1, RESET, colourPriorityMap[task.Priority()])
+	fmt.Fprintf(&formattedTask, "%s%s%c%2d.%s%s%s", strings.Repeat("    ", depth), NUMBER_COLOR, state, task.ID()+1, RESET, options.GetFGColor(task.Priority()), options.GetBGColor(task.Priority()))
 	text := task.Text()
 	trimmed := false
 	if options.Summarise {
@@ -122,12 +188,14 @@ func formatTask(width, depth int, task Task, options *ViewOptions) {
 			trimmed = true
 		}
 	}
-	printWrappedText(text, width, indent)
+	formattedTask.WriteString(printWrappedText(text, width, indent))
 	if trimmed {
-		fmt.Printf("%s+%s\n", TITLE_COLOUR, RESET)
+		fmt.Fprintf(&formattedTask, "%s+%s\n", TITLE_COLOUR, RESET)
+
 	} else {
-		fmt.Printf("%s\n", RESET)
+		fmt.Fprintf(&formattedTask, fmt.Sprintf("%s\n", RESET))
 	}
+	return formattedTask.String()
 }
 
 func consoleDisplayTask(width, depth int, task Task, options *ViewOptions) {
@@ -135,7 +203,7 @@ func consoleDisplayTask(width, depth int, task Task, options *ViewOptions) {
 		return
 	}
 	if depth >= 0 {
-		formatTask(width, depth, task, options)
+		fmt.Print(formatTask(width, depth, task, options))
 	}
 	if !options.Summarise {
 		view := CreateTaskView(task, options)
@@ -164,12 +232,12 @@ func (c *ConsoleView) ShowTree(tasks TaskList, options *ViewOptions) {
 	}
 }
 
-func (c *ConsoleView) ShowTaskInfo(task Task) {
+func (c *ConsoleView) ShowTaskInfo(task Task, options *ViewOptions) {
 	width := getTerminalWidth()
-	fmt.Print(colourPriorityMap[task.Priority()])
+	fmt.Print(options.GetFGColor(task.Priority()))
 	printWrappedText(task.Text(), width, 0)
 	fmt.Printf("%s\n\n", RESET)
-	fmt.Printf("%sPriority%s %s%s%s\n", BRIGHT, RESET, colourPriorityMap[task.Priority()], task.Priority().String(), RESET)
+	fmt.Printf("%sPriority%s %s%s%s%s\n", BRIGHT, RESET, options.GetFGColor(task.Priority()), options.GetBGColor(task.Priority()), task.Priority().String(), RESET)
 	fmt.Printf("%sCreated:%s %s\n", BRIGHT, RESET, task.CreationTime().Local().String())
 	completed := "incomplete"
 	if !task.CompletionTime().IsZero() {

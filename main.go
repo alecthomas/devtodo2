@@ -28,6 +28,7 @@ import (
 
 const usage = `DevTodo2 - a hierarchical command-line task manager
 
+
 DevTodo is a program aimed specifically at programmers (but usable by anybody
 at the terminal) to aid in day-to-day development.
 
@@ -52,84 +53,68 @@ depend on another.
     Edit an existing task.
 `
 
-// Actions
 var addFlag = kingpin.Flag("add", "Add a task.").Short('a').Bool()
 var editFlag = kingpin.Flag("edit", "Edit a task, replacing its text.").Short('e').Bool()
 var markDoneFlag = kingpin.Flag("done", "Mark the given tasks as done.").Short('d').Bool()
 var markNotDoneFlag = kingpin.Flag("not-done", "Mark the given tasks as not done.").Short('D').Bool()
 var removeFlag = kingpin.Flag("remove", "Remove the given tasks.").Bool()
-var reparentFlag = kingpin.Flag("reparent", "Reparent task A below task B").Bool()
+var reparentFlag = kingpin.Flag("reparent", "Reparent task A below task B.").Bool()
 var titleFlag = kingpin.Flag("title", "Set the task list title.").Bool()
 var infoFlag = kingpin.Flag("info", "Show information on a task.").Bool()
 var importFlag = kingpin.Flag("import", "Import and synchronise TODO items from source code.").Bool()
 var purgeFlag = kingpin.Flag("purge", "Purge completed tasks older than this.").Default("-1s").PlaceHolder("0s").Duration()
 
-// Options
-var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').Default("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
-var graftFlag = kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").String()
-var fileFlag = kingpin.Flag("file", "Flie to load task lists from.").Default(".todo2").String()
-var legacyFileFlag = kingpin.Flag("legacy-file", "File to load legacy task lists from.").Default(".todo").String()
-var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short('s').Bool()
-var orderFlag = kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done)").Default("priority").Enum("index", "created", "completed", "text", "priority", "duration", "done")
-
-// Task text.
+var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
 
-func doView(tasks TaskList) {
-	order, reversed := OrderFromString(*orderFlag)
-	options := &ViewOptions{
-		ShowAll:   *allFlag,
-		Summarise: *summaryFlag,
-		Order:     order,
-		Reversed:  reversed,
-	}
+func doView(tasks TaskList, options *ViewOptions) {
 	view := NewConsoleView()
 	view.ShowTree(tasks, options)
 }
 
-func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
+func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string, config *config) {
 	graft.Create(text, priority)
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doEditTask(tasks TaskList, task Task, priority Priority, text string) {
+func doEditTask(tasks TaskList, task Task, priority Priority, text string, config *config) {
 	if text != "" {
 		task.SetText(text)
 	}
 	if priority != -1 {
 		task.SetPriority(priority)
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doMarkDone(tasks TaskList, references []Task) {
+func doMarkDone(tasks TaskList, references []Task, config *config) {
 	for _, task := range references {
 		task.SetCompleted()
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doMarkNotDone(tasks TaskList, references []Task) {
+func doMarkNotDone(tasks TaskList, references []Task, config *config) {
 	for _, task := range references {
 		task.SetCompletionTime(time.Time{})
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doReparent(tasks TaskList, task TaskNode, below TaskNode) {
+func doReparent(tasks TaskList, task TaskNode, below TaskNode, config *config) {
 	ReparentTask(task, below)
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doRemove(tasks TaskList, references []Task) {
+func doRemove(tasks TaskList, references []Task, config *config) {
 	for _, task := range references {
 		task.Delete()
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doPurge(tasks TaskList, age time.Duration) {
+func doPurge(tasks TaskList, age time.Duration, config *config) {
 	cutoff := time.Now().Add(-age)
 	matches := tasks.FindAll(func(task Task) bool {
 		return !task.CompletionTime().IsZero() && task.CompletionTime().Before(cutoff)
@@ -137,32 +122,34 @@ func doPurge(tasks TaskList, age time.Duration) {
 	for _, m := range matches {
 		m.Delete()
 	}
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doSetTitle(tasks TaskList, args []string) {
+func doSetTitle(tasks TaskList, args []string, config *config) {
 	title := strings.Join(args, " ")
 	tasks.SetTitle(title)
-	saveTaskList(tasks)
+	saveTaskList(tasks, config)
 }
 
-func doShowInfo(tasks TaskList, index string) {
+func doShowInfo(tasks TaskList, index string, options *ViewOptions) {
 	task := tasks.Find(index)
 	if task == nil {
 		fatalf("no such task %s", index)
 	}
 	view := NewConsoleView()
-	view.ShowTaskInfo(task)
+	view.ShowTaskInfo(task, options)
 }
 
-func processAction(tasks TaskList) {
-	priority := PriorityFromString(*priorityFlag)
+func processAction(tasks TaskList, config *config) {
+	priority := PriorityFromString(config.Priority)
 	var graft TaskNode = tasks // -golint
-	if *graftFlag != "root" {
-		if graft = tasks.Find(*graftFlag); graft == nil {
-			fatalf("invalid graft index '%s'", *graftFlag)
+	if config.Graft != "root" {
+		if graft = tasks.Find(config.Graft); graft == nil {
+			fatalf("invalid graft index '%s'", config.Graft)
 		}
 	}
+	order, reversed := OrderFromString(config.Order)
+	options := NewViewOptions(*allFlag, *summaryFlag, order, reversed, config.FGColors, config.BGColors)
 
 	switch {
 	case *addFlag:
@@ -170,13 +157,13 @@ func processAction(tasks TaskList) {
 			fatalf("expected text for new task")
 		}
 		text := strings.Join(*taskText, " ")
-		doAdd(tasks, graft, priority, text)
+		doAdd(tasks, graft, priority, text, config)
 	case *markDoneFlag:
-		doMarkDone(tasks, resolveTaskReferences(tasks, *taskText))
+		doMarkDone(tasks, resolveTaskReferences(tasks, *taskText), config)
 	case *markNotDoneFlag:
-		doMarkNotDone(tasks, resolveTaskReferences(tasks, *taskText))
+		doMarkNotDone(tasks, resolveTaskReferences(tasks, *taskText), config)
 	case *removeFlag:
-		doRemove(tasks, resolveTaskReferences(tasks, *taskText))
+		doRemove(tasks, resolveTaskReferences(tasks, *taskText), config)
 	case *reparentFlag:
 		if len(*taskText) < 1 {
 			fatalf("expected <task> [<new-parent>] for reparenting")
@@ -187,14 +174,14 @@ func processAction(tasks TaskList) {
 		} else {
 			below = tasks
 		}
-		doReparent(tasks, resolveTaskReference(tasks, (*taskText)[0]), below)
+		doReparent(tasks, resolveTaskReference(tasks, (*taskText)[0]), below, config)
 	case *titleFlag:
-		doSetTitle(tasks, *taskText)
+		doSetTitle(tasks, *taskText, config)
 	case *infoFlag:
 		if len(*taskText) < 1 {
 			fatalf("expected <task> for info")
 		}
-		doShowInfo(tasks, (*taskText)[0])
+		doShowInfo(tasks, (*taskText)[0], options)
 	case *importFlag:
 		if len(*taskText) < 1 {
 			fatalf("expected list of files to import")
@@ -209,14 +196,14 @@ func processAction(tasks TaskList) {
 			fatalf("invalid task %s", (*taskText)[0])
 		}
 		text := strings.Join((*taskText)[1:], " ")
-		if *priorityFlag == "" {
+		if config.Priority == "" {
 			priority = -1
 		}
-		doEditTask(tasks, task, priority, text)
+		doEditTask(tasks, task, priority, text, config)
 	case *purgeFlag != -1*time.Second:
-		doPurge(tasks, *purgeFlag)
+		doPurge(tasks, *purgeFlag, config)
 	default:
-		doView(tasks)
+		doView(tasks, options)
 	}
 }
 
@@ -287,15 +274,15 @@ func resolveTaskReferences(tasks TaskList, indices []string) []Task {
 	return references
 }
 
-func loadTaskList() (tasks TaskList, err error) {
+func loadTaskList(config *config) (tasks TaskList, err error) {
 	// Try loading new-style task file
-	if file, err := os.Open(*fileFlag); err == nil {
+	if file, err := os.Open(config.File); err == nil {
 		defer file.Close()
 		loader := NewJSONIO()
 		return loader.Deserialize(file)
 	}
 	// Try loading legacy task file
-	if file, err := os.Open(*legacyFileFlag); err == nil {
+	if file, err := os.Open(config.LegacyFile); err == nil {
 		defer file.Close()
 		loader := NewLegacyIO()
 		return loader.Deserialize(file)
@@ -303,8 +290,8 @@ func loadTaskList() (tasks TaskList, err error) {
 	return nil, nil
 }
 
-func saveTaskList(tasks TaskList) {
-	path := *fileFlag
+func saveTaskList(tasks TaskList, config *config) {
+	path := config.File
 	previous := path + "~"
 	temp := path + "~~"
 	var serializeError error
@@ -333,17 +320,32 @@ func saveTaskList(tasks TaskList) {
 	}
 }
 
-func main() {
+func init() {
 	kingpin.CommandLine.Help = usage
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
-	kingpin.Parse()
+}
 
-	tasks, err := loadTaskList()
+func loadCLIConfig(config *config) {
+	kingpin.Flag("priority", "Priority of newly created tasks (veryhigh,high,medium,low,verylow).").Short('p').EnumVar(&config.Priority, veryhigh, high, medium, low, verylow)
+	kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").StringVar(&config.Graft)
+	kingpin.Flag("file", "File to load task lists from.").StringVar(&config.File)
+	kingpin.Flag("legacy-file", "File to load legacy task lists from.").StringVar(&config.LegacyFile)
+	kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done).").EnumVar(&config.Order, "index", "created", "completed", "text", "priority", "duration", "done")
+
+	kingpin.Parse()
+}
+
+func main() {
+	config := NewConfig()
+	loadConfigurationFile(config)
+	loadCLIConfig(config)
+
+	tasks, err := loadTaskList(config)
 	if err != nil {
 		fatalf("%s", err)
 	}
 	if tasks == nil {
 		tasks = NewTaskList()
 	}
-	processAction(tasks)
+	processAction(tasks, config)
 }

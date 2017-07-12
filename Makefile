@@ -1,5 +1,5 @@
 TARG=todo2
-GOFILES=todo.go view.go consoleview.go legacyio.go jsonio.go main.go importer.go
+GOFILES=config.go todo.go view.go consoleview.go legacyio.go jsonio.go main.go importer.go
 PREFIX=/usr/local
 prefix=$(PREFIX)
 bindir=$(prefix)/bin
