@@ -195,7 +195,7 @@ func processAction(tasks TaskList, config *config) {
 		if task == nil {
 			fatalf("invalid task %s", (*taskText)[0])
 		}
-		text := strings.Join(*taskText, " ")
+		text := strings.Join((*taskText)[1:], " ")
 		if config.Priority == "" {
 			priority = -1
 		}
