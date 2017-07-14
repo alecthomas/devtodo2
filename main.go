@@ -65,7 +65,7 @@ var importFlag = kingpin.Flag("import", "Import and synchronise TODO items from 
 var purgeFlag = kingpin.Flag("purge", "Purge completed tasks older than this.").Default("-1s").PlaceHolder("0s").Duration()
 
 // Options
-var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').Default("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
+var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').Enum("veryhigh", "high", "medium", "low", "verylow")
 var graftFlag = kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").String()
 var fileFlag = kingpin.Flag("file", "Flie to load task lists from.").Default(".todo2").String()
 var legacyFileFlag = kingpin.Flag("legacy-file", "File to load legacy task lists from.").Default(".todo").String()
@@ -210,7 +210,7 @@ func processAction(tasks TaskList) {
 		}
 		text := strings.Join((*taskText)[1:], " ")
 		if *priorityFlag == "" {
-			priority = -1
+			priority = task.Priority()
 		}
 		doEditTask(tasks, task, priority, text)
 	case *purgeFlag != -1*time.Second:
