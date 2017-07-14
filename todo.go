@@ -27,11 +27,11 @@ type Priority int
 
 // Priority constants.
 const (
-	VERYLOW = Priority(iota)
-	LOW
-	MEDIUM
+	VERYHIGH = Priority(iota)
 	HIGH
-	VERYHIGH
+	MEDIUM
+	LOW
+	VERYLOW
 )
 
 type Order int
