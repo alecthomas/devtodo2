@@ -173,7 +173,7 @@ func (c *ConsoleView) ShowTaskInfo(task Task) {
 	fmt.Printf("%sCreated:%s %s\n", BRIGHT, RESET, task.CreationTime().Local().String())
 	completed := "incomplete"
 	if !task.CompletionTime().IsZero() {
-		completed = task.CompletionTime().String()
+		completed = task.CompletionTime().Local().String()
 	}
 	fmt.Printf("%sCompleted:%s %s\n", BRIGHT, RESET, completed)
 }
