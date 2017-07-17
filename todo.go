@@ -27,11 +27,11 @@ type Priority int
 
 // Priority constants.
 const (
-	VERYLOW = Priority(iota)
-	LOW
-	MEDIUM
+	VERYHIGH = Priority(iota)
 	HIGH
-	VERYHIGH
+	MEDIUM
+	LOW
+	VERYLOW
 )
 
 type Order int
@@ -161,9 +161,9 @@ func (t Order) String() string {
 }
 
 func OrderFromString(order string) (Order, bool) {
-	reversed := true
+	reversed := false
 	if len(order) >= 1 && order[0] == '-' {
-		reversed = false
+		reversed = true
 		order = order[1:]
 	}
 	if o, ok := orderFromString[order]; ok {
