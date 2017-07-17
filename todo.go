@@ -161,9 +161,9 @@ func (t Order) String() string {
 }
 
 func OrderFromString(order string) (Order, bool) {
-	reversed := false
+	reversed := true
 	if len(order) >= 1 && order[0] == '-' {
-		reversed = true
+		reversed = false
 		order = order[1:]
 	}
 	if o, ok := orderFromString[order]; ok {

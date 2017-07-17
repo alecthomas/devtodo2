@@ -65,16 +65,22 @@ var importFlag = kingpin.Flag("import", "Import and synchronise TODO items from 
 var purgeFlag = kingpin.Flag("purge", "Purge completed tasks older than this.").Default("-1s").PlaceHolder("0s").Duration()
 
 // Options
-var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').Default("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
+var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').
+	PlaceHolder("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
 var graftFlag = kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").String()
 var fileFlag = kingpin.Flag("file", "Flie to load task lists from.").Default(".todo2").String()
 var legacyFileFlag = kingpin.Flag("legacy-file", "File to load legacy task lists from.").Default(".todo").String()
 var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short('s').Bool()
-var orderFlag = kingpin.Flag("order", "Specify display order of tasks (index,created,completed,text,priority,duration,done)").Default("priority").Enum("index", "created", "completed", "text", "priority", "duration", "done")
+var orderFlag = kingpin.Flag("order", "Specify display order of tasks ([-]index,created,completed,text,priority,duration,done)").Default("priority").Enum(orderEnum...)
 
 // Task text.
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
+
+var orderEnum = []string{
+	"index", "created", "completed", "text", "priority", "duration", "done",
+	"-index", "-created", "-completed", "-text", "-priority", "-duration", "-done",
+}
 
 func doView(tasks TaskList) {
 	order, reversed := OrderFromString(*orderFlag)
