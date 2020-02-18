@@ -1,5 +1,6 @@
 DevTodo2
 ========
+
 DevTodo2 is a command-line task management utility. Tasks are hierarchically
 organised, have priorities, and track creation and completion time.
 
