@@ -74,6 +74,10 @@ var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short(
 var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short('s').Bool()
 var orderFlag = kingpin.Flag("order", "Specify display order of tasks ([-]index,created,completed,text,priority,duration,done)").Default("priority").Enum(orderEnum...)
 
+
+var databaseFileFlag = kingpin.Flag("database", "Change the database from the default (.todo) to the filename specified.").Default(".todo").String()
+var todoFileFlag = kingpin.Flag("TODO", "Generate a typical TODO output text file from a Todo DB.").Short('T').Bool()
+
 // Task text.
 var taskText = kingpin.Arg("arg", "Task text or index.").Strings()
 
@@ -92,6 +96,18 @@ func doView(tasks TaskList) {
 	}
 	view := NewConsoleView()
 	view.ShowTree(tasks, options)
+}
+
+func doExport(tasks TaskList, databaseFileFlag string) {
+	order, reversed := OrderFromString(*orderFlag)
+	options := &ViewOptions{
+		ShowAll:   *allFlag,
+		Summarise: *summaryFlag,
+		Order:     order,
+		Reversed:  reversed,
+	}
+	exporter := NewExporter(databaseFileFlag)
+	exporter.SaveTodo(tasks, options)
 }
 
 func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
@@ -221,6 +237,8 @@ func processAction(tasks TaskList) {
 		doEditTask(tasks, task, priority, text)
 	case *purgeFlag != -1*time.Second:
 		doPurge(tasks, *purgeFlag)
+	case *todoFileFlag:
+		doExport(tasks, *databaseFileFlag)
 	default:
 		doView(tasks)
 	}

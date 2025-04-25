@@ -54,6 +54,18 @@ List outstanding tasks                 ``todo2``
 List *all* tasks                       ``todo2 -A``
 ====================================   ==============================
 
+QtCreator integration
+--------
+
+in CMakeLists.txt add::
+
+  include(cmake/todo.cmake)
+  generateTodo(${CMAKE_CURRENT_LIST_DIR})
+
+to enable TODO plugin in QtCreator ``About Plugins -> Utilities -> To Do (experimental)``
+
+on every project generation there will be the list of tasks to do in the dedicated TODO box
+
 DevTodo1?
 ---------
 Yes, this is version 2. `Version 1 <http://swapoff.org/devtodo1.html>`_ was written in
