@@ -1,5 +1,5 @@
 macro(generateTodo SRC_DIR)
-    file(GLOB_RECURSE TODO_DATABASES ${SRC_DIR}/*.todo)
+    file(GLOB_RECURSE TODO_DATABASES ${SRC_DIR}/*.todo ${SRC_DIR}/*.todo2)
     list(LENGTH TODO_DATABASES TODOS_LENGTH)
 
     if(${TODOS_LENGTH} GREATER 0)
@@ -8,12 +8,23 @@ macro(generateTodo SRC_DIR)
             #get_filename_component(todo_srcdir_rel ${val} DIRECTORY BASE_DIR ${SRC_DIR})
             string(REPLACE ${SRC_DIR} "{PRJ}" todo_srcdir_rel ${val})
             string(REPLACE ${SRC_DIR} ${CMAKE_BINARY_DIR} todo_src ${val})
-            string(REPLACE ".todo" "todo.h" todo_src ${todo_src})
+            string(APPEND todo_src ".h")
             get_filename_component(todo_workdir ${todo_src} DIRECTORY)
+
+            set(todo_v1 '')
+            set(todo_v2 '')
+            if ("${val}" STREQUAL "${todo_srcdir}/.todo2")
+                set(todo_v2 "${val}")
+            else ()
+                set(todo_v1 "${val}")
+                if (EXISTS "${todo_srcdir}/.todo2") # ignore v1
+                    continue()
+                endif()
+            endif()
 
             execute_process(
                 #COMMAND todo -f +children -T --database ${val}
-                COMMAND /usr/local/bin/todo2 --legacy-file=${val} --file=''  -T
+                COMMAND /usr/local/bin/todo2 --legacy-file=${todo_v1} --file=${todo_v2} -T
                 WORKING_DIRECTORY ${todo_workdir}
 
                 OUTPUT_VARIABLE out_var
@@ -44,6 +55,7 @@ macro(generateTodo SRC_DIR)
 
                 list(APPEND TODO_SOURCES ${todo_src})
             endif()
+
             #set_source_files_properties(${todo_src} PROPERTIES GENERATED 1)
         endforeach()
         add_library(TODO INTERFACE)
