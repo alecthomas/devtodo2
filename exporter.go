@@ -24,15 +24,20 @@ import (
 
 import "github.com/dispatchrun/coroutine"
 
+type TaskInfo struct {
+    task Task;
+    depsLevel int;
+}
+
 type Exporter struct{
     databaseFile string;
-    coro coroutine.Coroutine[Task, any];
+    coro coroutine.Coroutine[TaskInfo, any];
 }
 
 func NewExporter(databaseFile string) *Exporter {
-	return &Exporter{
-		databaseFile: databaseFile,
-	}
+    return &Exporter{
+        databaseFile: databaseFile,
+    }
 }
 
 func writeLine(file *os.File, line string) error {
@@ -53,37 +58,43 @@ func (c *Exporter) writeStringsToFile(filename string) error {
     defer file.Close()
 
     for c.coro.Next() {
-        task := c.coro.Recv()
+        taskInfo := c.coro.Recv()
+        task := taskInfo.task
+        depsLevel := taskInfo.depsLevel
         if !task.CompletionTime().IsZero() {
-		continue;
+            continue;
 	}
-        line := fmt.Sprintf("- %s\n  (added %s, priority %s)\n", task.Text(), task.CreationTime().Format(time.ANSIC), task.Priority())
+        levelSpaces := ""
+        for i := 0; i < depsLevel; i ++{
+            levelSpaces += "  "
+        }
+        line := fmt.Sprintf("%s- %s\n  (added %s, priority %s)\n", levelSpaces, task.Text(), task.CreationTime().Format(time.ANSIC), task.Priority())
 	_ = writeLine(file, line)
     }
 
     return nil
 }
 
-func SaveTask(task Task, level int) {
-	for i := 0; i < task.Len(); i++ {
-		task_ := task.At(i)
-		coroutine.Yield[Task, any](task_)
-		for y := 0; y < task_.Len(); y++ {
-			SaveTask(task_.At(y), level + 1)
-		}
-	}
+func SaveTask(task Task, depsLevel int) {
+    taskInfo_ := TaskInfo{task, depsLevel}
+    coroutine.Yield[TaskInfo, any](taskInfo_)
+
+    for i := 0; i < task.Len(); i++ {
+        SaveTask(task.At(i), depsLevel + 1)
+    }
+}
+
+func SaveTasks(tasks []Task, depsLevel int) {
+    for i := 0; i < len(tasks); i++ {
+        SaveTask(tasks[i], depsLevel)
+    }
 }
 
 func (c *Exporter) SaveTodo(tasks TaskList, options *ViewOptions) {
-	view := CreateTaskView(tasks, options)
-	c.coro = coroutine.New[Task, any](func() {
-	//	SaveTask(view)
-		for i := 0; i < view.Len(); i++ {
-			task_ := view.At(i)
-			coroutine.Yield[Task, any](task_)
-			SaveTask(task_, 1)
-		}
-	})
+    view := CreateTaskView(tasks, options)
+    c.coro = coroutine.New[TaskInfo, any](func() {
+        SaveTasks(view.tasks, 0)
+    })
 
-        c.writeStringsToFile("TODO")
+    c.writeStringsToFile("TODO")
 }
