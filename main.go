@@ -68,7 +68,7 @@ var purgeFlag = kingpin.Flag("purge", "Purge completed tasks older than this.").
 var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').
 	PlaceHolder("medium").Enum("veryhigh", "high", "medium", "low", "verylow")
 var graftFlag = kingpin.Flag("graft", "Task to graft new tasks to.").Short('g').Default("root").String()
-var fileFlag = kingpin.Flag("file", "Flie to load task lists from.").Default(".todo2").String()
+var fileFlag = kingpin.Flag("file", "File to load task lists from.").Default(".todo2").String()
 var legacyFileFlag = kingpin.Flag("legacy-file", "File to load legacy task lists from.").Default(".todo").String()
 var allFlag = kingpin.Flag("all", "Show all tasks, even completed ones.").Short('A').Bool()
 var summaryFlag = kingpin.Flag("summary", "Summarise tasks to one line.").Short('s').Bool()
