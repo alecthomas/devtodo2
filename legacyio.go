@@ -16,7 +16,7 @@
 
 // Loads legacy devtodo XML files.
 
-package main
+package devtodo2
 
 import (
 	"encoding/xml"

@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alecthomas/devtodo2"
 	"github.com/alecthomas/kingpin/v2"
 )
 
@@ -82,24 +83,24 @@ var orderEnum = []string{
 	"-index", "-created", "-completed", "-text", "-priority", "-duration", "-done",
 }
 
-func doView(tasks TaskList) {
-	order, reversed := OrderFromString(*orderFlag)
-	options := &ViewOptions{
+func doView(tasks devtodo2.TaskList) {
+	order, reversed := devtodo2.OrderFromString(*orderFlag)
+	options := &devtodo2.ViewOptions{
 		ShowAll:   *allFlag,
 		Summarise: *summaryFlag,
 		Order:     order,
 		Reversed:  reversed,
 	}
-	view := NewConsoleView()
+	view := devtodo2.NewConsoleView()
 	view.ShowTree(tasks, options)
 }
 
-func doAdd(tasks TaskList, graft TaskNode, priority Priority, text string) {
+func doAdd(tasks devtodo2.TaskList, graft devtodo2.TaskNode, priority devtodo2.Priority, text string) {
 	graft.Create(text, priority)
 	saveTaskList(tasks)
 }
 
-func doEditTask(tasks TaskList, task Task, priority Priority, text string) {
+func doEditTask(tasks devtodo2.TaskList, task devtodo2.Task, priority devtodo2.Priority, text string) {
 	if text != "" {
 		task.SetText(text)
 	}
@@ -109,35 +110,35 @@ func doEditTask(tasks TaskList, task Task, priority Priority, text string) {
 	saveTaskList(tasks)
 }
 
-func doMarkDone(tasks TaskList, references []Task) {
+func doMarkDone(tasks devtodo2.TaskList, references []devtodo2.Task) {
 	for _, task := range references {
 		task.SetCompleted()
 	}
 	saveTaskList(tasks)
 }
 
-func doMarkNotDone(tasks TaskList, references []Task) {
+func doMarkNotDone(tasks devtodo2.TaskList, references []devtodo2.Task) {
 	for _, task := range references {
 		task.SetCompletionTime(time.Time{})
 	}
 	saveTaskList(tasks)
 }
 
-func doReparent(tasks TaskList, task TaskNode, below TaskNode) {
-	ReparentTask(task, below)
+func doReparent(tasks devtodo2.TaskList, task devtodo2.TaskNode, below devtodo2.TaskNode) {
+	devtodo2.ReparentTask(task, below)
 	saveTaskList(tasks)
 }
 
-func doRemove(tasks TaskList, references []Task) {
+func doRemove(tasks devtodo2.TaskList, references []devtodo2.Task) {
 	for _, task := range references {
 		task.Delete()
 	}
 	saveTaskList(tasks)
 }
 
-func doPurge(tasks TaskList, age time.Duration) {
+func doPurge(tasks devtodo2.TaskList, age time.Duration) {
 	cutoff := time.Now().Add(-age)
-	matches := tasks.FindAll(func(task Task) bool {
+	matches := tasks.FindAll(func(task devtodo2.Task) bool {
 		return !task.CompletionTime().IsZero() && task.CompletionTime().Before(cutoff)
 	})
 	for _, m := range matches {
@@ -146,34 +147,34 @@ func doPurge(tasks TaskList, age time.Duration) {
 	saveTaskList(tasks)
 }
 
-func doSetTitle(tasks TaskList, args []string) {
+func doSetTitle(tasks devtodo2.TaskList, args []string) {
 	title := strings.Join(args, " ")
 	tasks.SetTitle(title)
 	saveTaskList(tasks)
 }
 
-func doShowInfo(tasks TaskList, index string) {
+func doShowInfo(tasks devtodo2.TaskList, index string) {
 	task := tasks.Find(index)
 	if task == nil {
-		fatalf("no such task %s", index)
+		devtodo2.Fatalf("no such task %s", index)
 	}
-	view := NewConsoleView()
+	view := devtodo2.NewConsoleView()
 	view.ShowTaskInfo(task)
 }
 
-func processAction(tasks TaskList) {
-	priority := PriorityFromString(*priorityFlag)
-	var graft TaskNode = tasks // -golint
+func processAction(tasks devtodo2.TaskList) {
+	priority := devtodo2.PriorityFromString(*priorityFlag)
+	var graft devtodo2.TaskNode = tasks
 	if *graftFlag != "root" {
 		if graft = tasks.Find(*graftFlag); graft == nil {
-			fatalf("invalid graft index '%s'", *graftFlag)
+			devtodo2.Fatalf("invalid graft index '%s'", *graftFlag)
 		}
 	}
 
 	switch {
 	case *addFlag:
 		if len(*taskText) == 0 {
-			fatalf("expected text for new task")
+			devtodo2.Fatalf("expected text for new task")
 		}
 		text := strings.Join(*taskText, " ")
 		doAdd(tasks, graft, priority, text)
@@ -185,9 +186,9 @@ func processAction(tasks TaskList) {
 		doRemove(tasks, resolveTaskReferences(tasks, *taskText))
 	case *reparentFlag:
 		if len(*taskText) < 1 {
-			fatalf("expected <task> [<new-parent>] for reparenting")
+			devtodo2.Fatalf("expected <task> [<new-parent>] for reparenting")
 		}
-		var below TaskNode
+		var below devtodo2.TaskNode
 		if len(*taskText) == 2 {
 			below = resolveTaskReference(tasks, (*taskText)[1])
 		} else {
@@ -198,21 +199,21 @@ func processAction(tasks TaskList) {
 		doSetTitle(tasks, *taskText)
 	case *infoFlag:
 		if len(*taskText) < 1 {
-			fatalf("expected <task> for info")
+			devtodo2.Fatalf("expected <task> for info")
 		}
 		doShowInfo(tasks, (*taskText)[0])
 	case *importFlag:
 		if len(*taskText) < 1 {
-			fatalf("expected list of files to import")
+			devtodo2.Fatalf("expected list of files to import")
 		}
-		doImport(tasks, *taskText)
+		devtodo2.DoImport(tasks, *taskText)
 	case *editFlag:
 		if len(*taskText) < 1 {
-			fatalf("expected [-p <priority>] <task> [<text>]")
+			devtodo2.Fatalf("expected [-p <priority>] <task> [<text>]")
 		}
 		task := tasks.Find((*taskText)[0])
 		if task == nil {
-			fatalf("invalid task %s", (*taskText)[0])
+			devtodo2.Fatalf("invalid task %s", (*taskText)[0])
 		}
 		text := strings.Join((*taskText)[1:], " ")
 		if *priorityFlag == "" {
@@ -226,25 +227,15 @@ func processAction(tasks TaskList) {
 	}
 }
 
-func resolveTaskReference(tasks TaskList, index string) Task {
+func resolveTaskReference(tasks devtodo2.TaskList, index string) devtodo2.Task {
 	task := tasks.Find(index)
 	if task == nil {
-		fatalf("invalid task index %s", index)
+		devtodo2.Fatalf("invalid task index %s", index)
 	}
 	return task
 }
 
 func expandRange(indexRange string) []string {
-	// This whole function makes me sad. This kind of manipulation of strings and
-	// arrays just should not be this verbose.
-	//
-	// For constrast, in Python:
-	//
-	// def expand_range(index):
-	//   start_index, end = index.split('-')
-	//   start_index, start = start_index.rsplit('.', 1)
-	//   for i in range(int(start), int(end) + 1):
-	//     yield '%s.%s' % (start_index, str(i))
 	ranges := strings.Split(indexRange, "-")
 	if len(ranges) != 2 {
 		return nil
@@ -267,17 +258,16 @@ func expandRange(indexRange string) []string {
 	return rangeIndexes
 }
 
-func resolveTaskReferences(tasks TaskList, indices []string) []Task {
-	references := make([]Task, 0, len(indices))
+func resolveTaskReferences(tasks devtodo2.TaskList, indices []string) []devtodo2.Task {
+	references := make([]devtodo2.Task, 0, len(indices))
 	for _, index := range indices {
 		if strings.Index(index, "-") == -1 {
 			task := resolveTaskReference(tasks, index)
 			references = append(references, task)
 		} else {
-			// Expand ranges. eg. 1.2-5 expands to 1.2 1.3 1.4 1.5
 			indexes := expandRange(index)
 			if indexes == nil {
-				fatalf("invalid task range %s", index)
+				devtodo2.Fatalf("invalid task range %s", index)
 			}
 			for _, rangeIndex := range indexes {
 				task := resolveTaskReference(tasks, rangeIndex)
@@ -288,28 +278,26 @@ func resolveTaskReferences(tasks TaskList, indices []string) []Task {
 		}
 	}
 	if len(references) == 0 {
-		fatalf("no tasks provided to mark done")
+		devtodo2.Fatalf("no tasks provided to mark done")
 	}
 	return references
 }
 
-func loadTaskList() (tasks TaskList, err error) {
-	// Try loading new-style task file
+func loadTaskList() (tasks devtodo2.TaskList, err error) {
 	if file, err := os.Open(*fileFlag); err == nil {
 		defer file.Close()
-		loader := NewJSONIO()
+		loader := devtodo2.NewJSONIO()
 		return loader.Deserialize(file)
 	}
-	// Try loading legacy task file
 	if file, err := os.Open(*legacyFileFlag); err == nil {
 		defer file.Close()
-		loader := NewLegacyIO()
+		loader := devtodo2.NewLegacyIO()
 		return loader.Deserialize(file)
 	}
 	return nil, nil
 }
 
-func saveTaskList(tasks TaskList) {
+func saveTaskList(tasks devtodo2.TaskList) {
 	path := *fileFlag
 	previous := path + "~"
 	temp := path + "~~"
@@ -324,17 +312,17 @@ func saveTaskList(tasks TaskList) {
 				}
 				if _, err = os.Stat(path); err == nil {
 					if err = os.Rename(path, previous); err != nil {
-						fatalf("unable to rename %s to %s", path, previous)
+						devtodo2.Fatalf("unable to rename %s to %s", path, previous)
 					}
 				}
 				if err = os.Rename(temp, path); err != nil {
-					fatalf("unable to rename %s to %s", temp, path)
+					devtodo2.Fatalf("unable to rename %s to %s", temp, path)
 				}
 			}
 		}()
-		writer := NewJSONIO()
+		writer := devtodo2.NewJSONIO()
 		if serializeError = writer.Serialize(file, tasks); serializeError != nil {
-			fatalf(serializeError.Error())
+			devtodo2.Fatalf(serializeError.Error())
 		}
 	}
 }
@@ -346,10 +334,10 @@ func main() {
 
 	tasks, err := loadTaskList()
 	if err != nil {
-		fatalf("%s", err)
+		devtodo2.Fatalf("%s", err)
 	}
 	if tasks == nil {
-		tasks = NewTaskList()
+		tasks = devtodo2.NewTaskList()
 	}
 	processAction(tasks)
 }

@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-package main
+package devtodo2
 
 import (
 	"fmt"
@@ -86,7 +86,7 @@ func taskState(task Task) int {
 	return ' '
 }
 
-func fatalf(format string, args ...interface{}) {
+func Fatalf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "error: %s\n", fmt.Sprintf(format, args...))
 	os.Exit(1)
 }

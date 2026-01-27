@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-package main
+package devtodo2
 
 import (
 	"bufio"
@@ -26,7 +26,7 @@ import (
 func importFile(file string) {
 	f, e := os.Open(file)
 	if e != nil {
-		fatalf("failed to open %s: %s", file, e.Error())
+		Fatalf("failed to open %s: %s", file, e.Error())
 	}
 	defer f.Close()
 	reader := bufio.NewReader(f)
@@ -36,7 +36,7 @@ func importFile(file string) {
 			break
 		}
 		if e != nil {
-			fatalf("error reading %s: %s", file, e.Error())
+			Fatalf("error reading %s: %s", file, e.Error())
 		}
 		text := string(line)
 		if strings.Contains(text, "TODO") {
@@ -45,7 +45,7 @@ func importFile(file string) {
 	}
 }
 
-func doImport(tasks TaskList, files []string) {
+func DoImport(tasks TaskList, files []string) {
 	for _, file := range files {
 		importFile(file)
 	}
