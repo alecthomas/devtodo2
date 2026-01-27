@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -24,6 +25,7 @@ import (
 	"time"
 
 	"github.com/alecthomas/devtodo2"
+	"github.com/alecthomas/devtodo2/mcp"
 	"github.com/alecthomas/kingpin/v2"
 )
 
@@ -64,6 +66,7 @@ var titleFlag = kingpin.Flag("title", "Set the task list title.").Bool()
 var infoFlag = kingpin.Flag("info", "Show information on a task.").Bool()
 var importFlag = kingpin.Flag("import", "Import and synchronise TODO items from source code.").Bool()
 var purgeFlag = kingpin.Flag("purge", "Purge completed tasks older than this.").Default("-1s").PlaceHolder("0s").Duration()
+var mcpFlag = kingpin.Flag("mcp", "Run as MCP server for AI agent integration.").Bool()
 
 // Options
 var priorityFlag = kingpin.Flag("priority", "priority of newly created tasks (veryhigh,high,medium,low,verylow)").Short('p').
@@ -331,6 +334,14 @@ func main() {
 	kingpin.CommandLine.Help = usage
 	kingpin.Version("2.2.0").Author("Alec Thomas <alec@swapoff.org>")
 	kingpin.Parse()
+
+	if *mcpFlag {
+		server := mcp.NewServer(*fileFlag, *legacyFileFlag)
+		if err := server.Run(context.Background()); err != nil && !strings.Contains(err.Error(), "EOF") {
+			devtodo2.Fatalf("MCP server error: %s", err)
+		}
+		return
+	}
 
 	tasks, err := loadTaskList()
 	if err != nil {
